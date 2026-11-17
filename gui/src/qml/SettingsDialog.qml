@@ -165,13 +165,76 @@ DialogView {
     }
 
     Item {
+        // Section list on the left, like macOS System Settings. The TabBar below stays as the
+        // source of truth for the current section (keyboard and controller code use it), but
+        // it is not shown.
+        Rectangle {
+            id: sidebar
+            anchors {
+                top: parent.top
+                left: parent.left
+                bottom: parent.bottom
+            }
+            width: 210
+            color: Theme.sidebar
+
+            Column {
+                anchors {
+                    fill: parent
+                    topMargin: 14
+                    leftMargin: 10
+                    rightMargin: 10
+                }
+                spacing: 2
+
+                Repeater {
+                    model: bar.count
+                    delegate: AbstractButton {
+                        id: sectionButton
+                        required property int index
+                        readonly property bool current: bar.currentIndex === index
+                        width: parent.width
+                        height: 34
+                        focusPolicy: Qt.NoFocus
+                        hoverEnabled: true
+                        onClicked: bar.currentIndex = index
+                        background: Rectangle {
+                            radius: Theme.radiusSmall + 1
+                            color: sectionButton.current ? Theme.accent
+                                 : (sectionButton.hovered ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
+                        }
+                        contentItem: Label {
+                            leftPadding: 12
+                            verticalAlignment: Text.AlignVCenter
+                            text: bar.itemAt(sectionButton.index) ? bar.itemAt(sectionButton.index).text : ""
+                            font.pixelSize: Theme.fontBody
+                            font.weight: sectionButton.current ? Font.DemiBold : Font.Normal
+                            color: sectionButton.current ? "white" : Theme.textPrimary
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                anchors {
+                    top: parent.top
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+                width: 1
+                color: Theme.separator
+            }
+        }
+
         TabBar {
             id: bar
+            height: 0
+            opacity: 0
+            clip: true
             anchors {
                 top: parent.top
                 left: parent.left
                 right: parent.right
-                topMargin: 5
             }
             TabButton {
                 id: general
@@ -422,10 +485,11 @@ DialogView {
 
         StackLayout {
             anchors {
-                top: bar.bottom
-                left: parent.left
+                top: parent.top
+                left: sidebar.right
                 right: parent.right
                 bottom: parent.bottom
+                topMargin: 16
             }
             currentIndex: bar.currentIndex
             onCurrentIndexChanged: {
@@ -479,6 +543,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Ask)")
                         }
 
@@ -496,6 +561,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Do Nothing)")
                         }
 
@@ -519,6 +585,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                             visible: (typeof Chiaki.settings.steamDeckHaptics !== "undefined")
                         }
@@ -543,6 +610,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                             visible: typeof Chiaki.settings.verticalDeck !== "undefined"
                         }
@@ -561,6 +629,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Audio and Video Enabled)")
                         }
 
@@ -603,6 +672,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                         }
 
@@ -628,6 +698,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(Checked)")
                             }
                         }
@@ -718,6 +789,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(L1+R1+L3+R3)")
                             }
                         }
@@ -790,6 +862,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Auto)")
                     }
 
@@ -812,6 +885,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Off)")
                         visible: Chiaki.settings.metalFxSupported
                     }
@@ -832,6 +906,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Fullscreen)")
                     }
 
@@ -863,6 +938,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(1920)")
                         visible: Chiaki.settings.windowType == 1
                     }
@@ -895,6 +971,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(1080)")
                         visible: Chiaki.settings.windowType == 1
                     }
@@ -911,6 +988,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Unchecked)")
                     }
 
@@ -925,6 +1003,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Checked)")
                     }
 
@@ -944,6 +1023,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Unchecked)")
                     }
 
@@ -971,6 +1051,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(High Quality)")
                     }
 
@@ -995,6 +1076,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Direct Mapping)")
                     }
 
@@ -1013,6 +1095,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(None)")
                     }
 
@@ -1036,6 +1119,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Vulkan)")
                     }
 
@@ -1053,6 +1137,7 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Unchecked)")
                         visible: Chiaki.settings.rendererBackend == 0
                     }
@@ -1598,6 +1683,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Auto)")
                         }
 
@@ -1622,6 +1708,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Auto)")
                         }
 
@@ -1654,6 +1741,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(50 ms)")
                         }
 
@@ -1684,6 +1772,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(100%)")
                         }
 
@@ -1699,6 +1788,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                         }
 
@@ -1717,6 +1807,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                             visible: typeof Chiaki.settings.speechProcessing !== "undefined"
                         }
@@ -1748,6 +1839,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(6 dB)")
                             visible: if (typeof Chiaki.settings.speechProcessing !== "undefined") {Chiaki.settings.speechProcessing} else {false}
                         }
@@ -1779,6 +1871,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(30 dB)")
                             visible: if (typeof Chiaki.settings.speechProcessing !== "undefined") {Chiaki.settings.speechProcessing} else {false}
                         }
@@ -1808,6 +1901,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(3%)")
                         }
 
@@ -1836,6 +1930,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(5%)")
                         }
 
@@ -1851,6 +1946,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                         }
 
@@ -1867,6 +1963,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                         }
                     }
@@ -2605,6 +2702,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(Checked)")
                             }
                         }
@@ -2633,6 +2731,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(Checked)")
                             }
                         }
@@ -2677,6 +2776,7 @@ DialogView {
                             Label {
                                 Layout.alignment: Qt.AlignRight
                                 Layout.leftMargin: 100
+                                color: Theme.textTertiary
                                 text: qsTr("(0.3 mm)")
                             }
                         }
@@ -2767,6 +2867,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(L1+R1+dpad Up)")
                             }
                         }
@@ -2797,6 +2898,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(Unchecked)")
                             }
                         }
@@ -2818,6 +2920,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(Normal)")
                             }
                         }
@@ -2856,6 +2959,7 @@ DialogView {
                             Label {
                                 Layout.alignment: Qt.AlignRight
                                 Layout.leftMargin: 250
+                                color: Theme.textTertiary
                                 text: qsTr("(console setting)")
                             }
                         }
@@ -2941,6 +3045,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                         }
 
@@ -2971,6 +3076,7 @@ DialogView {
                         Label {
                             Layout.alignment: Qt.AlignRight
                             Layout.leftMargin: 100
+                            color: Theme.textTertiary
                             text: qsTr("(75)")
                         }
 
@@ -3001,6 +3107,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(250)")
                             Layout.leftMargin: 100
                         }

@@ -642,4 +642,5 @@ Item {
         id: controllerMappingDialogComponent
         ControllerMappingDialog { }
     }
+
 }
