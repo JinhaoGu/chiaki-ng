@@ -896,15 +896,22 @@ DialogView {
                         visible: Chiaki.settings.metalFxSupported
                     }
 
-                    C.CheckBox {
+                    // Off / window size / 2K / 4K (VideoToolbox decoder only). With 2K or 4K the
+                    // renderer then scales the result to the window.
+                    C.ComboBox {
                         id: metalFxCheck
+                        Layout.preferredWidth: 400
                         visible: Chiaki.settings.metalFxSupported
-                        text: qsTr("Upscale to window size (VideoToolbox decoder)")
+                        model: [qsTr("Off"), qsTr("Window size"), qsTr("2K (2560 × 1440)"), qsTr("4K (3840 × 2160)")]
+                        currentIndex: Chiaki.settings.metalFxUpscaling ? 1 + Chiaki.settings.metalFxUpscaleTarget : 0
                         KeyNavigation.priority: KeyNavigation.BeforeItem
                         KeyNavigation.up: zeroCopyCheck
-                        KeyNavigation.down: frameInterpolationCheck.visible ? frameInterpolationCheck : windowTypeCombo
-                        checked: Chiaki.settings.metalFxUpscaling
-                        onToggled: Chiaki.settings.metalFxUpscaling = checked
+                        KeyNavigation.down: frameInterpolationCheck.visible ? frameInterpolationCheck : fpsOverlayCheck
+                        onActivated: (index) => {
+                            Chiaki.settings.metalFxUpscaling = index > 0;
+                            if (index > 0)
+                                Chiaki.settings.metalFxUpscaleTarget = index - 1;
+                        }
                     }
 
                     Label {

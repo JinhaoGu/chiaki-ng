@@ -478,7 +478,13 @@ bool QmlBackend::prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_
         && frame.frame->format == AV_PIX_FMT_VIDEOTOOLBOX) {
         if (!metalfx_upscaler)
             metalfx_upscaler = new MetalFXUpscaler();
-        const QSize target = window ? window->presentationPixelSize() : QSize();
+        // Fixed 2K/4K targets ignore the window; the renderer then scales the result to the window.
+        QSize target;
+        switch (metalfx_upscale_target.load(std::memory_order_relaxed)) {
+        case 1: target = QSize(2560, 1440); break;
+        case 2: target = QSize(3840, 2160); break;
+        default: target = window ? window->presentationPixelSize() : QSize(); break;
+        }
         AVFrame *upscaled = metalfx_upscaler->Process(frame.frame, target.width(), target.height());
         if (upscaled) {
             if (!metalfx_logged) {
@@ -1147,6 +1153,7 @@ void QmlBackend::createSession(const StreamSessionConnectInfo &connect_info)
     disable_zero_copy = !settings->GetUseZeroCopy();
 #ifdef Q_OS_MACOS
     metalfx_upscaling.store(settings->GetMetalFXUpscaling() && settings_qml->metalFxSupported());
+    metalfx_upscale_target.store(settings->GetMetalFXUpscaleTarget());
     metalfx_logged = false;
     {
         // Interpolation only helps when the display can show twice the stream frame rate.

@@ -372,6 +372,9 @@ class Settings : public QObject
 		void SetUseZeroCopy(bool enabled) { settings.setValue("settings/use_zero_copy", enabled); }
 		bool GetMetalFXUpscaling() const { return settings.value("settings/metalfx_upscaling", false).toBool(); }
 		void SetMetalFXUpscaling(bool enabled) { settings.setValue("settings/metalfx_upscaling", enabled); }
+		// MetalFX upscaling target: 0 = window size, 1 = 2K (2560x1440), 2 = 4K (3840x2160)
+		int GetMetalFXUpscaleTarget() const { return std::clamp(settings.value("settings/metalfx_upscale_target", 0).toInt(), 0, 2); }
+		void SetMetalFXUpscaleTarget(int target) { settings.setValue("settings/metalfx_upscale_target", std::clamp(target, 0, 2)); }
 		bool GetFrameInterpolation() const { return settings.value("settings/frame_interpolation", false).toBool(); }
 		void SetFrameInterpolation(bool enabled) { settings.setValue("settings/frame_interpolation", enabled); }
 		// 0 = VideoToolbox, 1 = MetalFX

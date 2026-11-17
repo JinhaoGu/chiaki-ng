@@ -668,6 +668,17 @@ bool QmlSettings::metalFxInterpolationSupported() const
 #endif
 }
 
+int QmlSettings::metalFxUpscaleTarget() const
+{
+    return settings->GetMetalFXUpscaleTarget();
+}
+
+void QmlSettings::setMetalFxUpscaleTarget(int target)
+{
+    settings->SetMetalFXUpscaleTarget(target);
+    emit metalFxUpscaleTargetChanged();
+}
+
 bool QmlSettings::metalFxSupported() const
 {
 #ifdef Q_OS_MACOS

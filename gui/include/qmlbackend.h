@@ -323,6 +323,7 @@ private:
     // Created lazily and used only on the frame thread; deleted after it stops.
     MetalFXUpscaler *metalfx_upscaler = {};
     std::atomic<bool> metalfx_upscaling{false};
+    std::atomic<int> metalfx_upscale_target{0}; // 0 window, 1 2K, 2 4K
     bool metalfx_logged = false;
     // Frame interpolation state; used only on the frame thread.
     FrameInterpolator *frame_interpolator = {};

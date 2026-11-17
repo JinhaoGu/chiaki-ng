@@ -56,6 +56,7 @@ class QmlSettings : public QObject
     Q_PROPERTY(bool useZeroCopy READ useZeroCopy WRITE setUseZeroCopy NOTIFY useZeroCopyChanged)
     Q_PROPERTY(bool metalFxUpscaling READ metalFxUpscaling WRITE setMetalFxUpscaling NOTIFY metalFxUpscalingChanged)
     Q_PROPERTY(bool metalFxSupported READ metalFxSupported CONSTANT)
+    Q_PROPERTY(int metalFxUpscaleTarget READ metalFxUpscaleTarget WRITE setMetalFxUpscaleTarget NOTIFY metalFxUpscaleTargetChanged)
     Q_PROPERTY(bool frameInterpolation READ frameInterpolation WRITE setFrameInterpolation NOTIFY frameInterpolationChanged)
     Q_PROPERTY(bool frameInterpolationSupported READ frameInterpolationSupported CONSTANT)
     Q_PROPERTY(int frameInterpolationEngine READ frameInterpolationEngine WRITE setFrameInterpolationEngine NOTIFY frameInterpolationEngineChanged)
@@ -306,6 +307,8 @@ public:
     bool metalFxUpscaling() const;
     void setMetalFxUpscaling(bool enabled);
     bool metalFxSupported() const;
+    int metalFxUpscaleTarget() const;
+    void setMetalFxUpscaleTarget(int target);
     bool frameInterpolation() const;
     void setFrameInterpolation(bool enabled);
     bool frameInterpolationSupported() const;
@@ -689,6 +692,7 @@ signals:
     void decoderChanged();
     void useZeroCopyChanged();
     void metalFxUpscalingChanged();
+    void metalFxUpscaleTargetChanged();
     void frameInterpolationChanged();
     void frameInterpolationEngineChanged();
     void frameInterpolationMultiplierChanged();
