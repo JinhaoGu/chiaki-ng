@@ -299,12 +299,6 @@ Pane {
                 verticalCenter: parent.verticalCenter
             }
             spacing: 8
-            BusyIndicator {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 20; height: 20
-                running: Chiaki.discoveryEnabled
-                visible: running
-            }
             Label {
                 anchors.verticalCenter: parent.verticalCenter
                 text: qsTr("Find consoles on this network")
