@@ -3,6 +3,7 @@
 #ifndef CHIAKI_SETTINGS_H
 #define CHIAKI_SETTINGS_H
 
+#include <algorithm>
 #include <chiaki/session.h>
 
 #include "host.h"
@@ -193,6 +194,12 @@ enum class PlaceboToneMappingMetadata {
 	CieY
 };
 
+#if defined(Q_OS_MACOS)
+static constexpr bool kIDROnFECFailureDefault = true;
+#else
+static constexpr bool kIDROnFECFailureDefault = false;
+#endif
+
 class Settings : public QObject
 {
 	Q_OBJECT
@@ -299,7 +306,9 @@ class Settings : public QObject
 		bool GetFullscreenDoubleClickEnabled() const	   { return settings.value("settings/fullscreen_doubleclick", false).toBool(); }
 		void SetFullscreenDoubleClickEnabled(bool enabled) { settings.setValue("settings/fullscreen_doubleclick", enabled); }
 
-		bool GetIDROnFECFailureEnabled() const	   { return settings.value("settings/idr_on_fec_failure", false).toBool(); }
+		// On by default on macOS: after a lost frame the VideoToolbox decoder outputs nothing until the
+		// next keyframe, and the console does not send one unless asked, so the picture froze for good.
+		bool GetIDROnFECFailureEnabled() const	   { return settings.value("settings/idr_on_fec_failure", kIDROnFECFailureDefault).toBool(); }
 		void SetIDROnFECFailureEnabled(bool enabled) { settings.setValue("settings/idr_on_fec_failure", enabled); }
 
 		float GetHapticOverride() const 			{ return settings.value("settings/haptic_override", 1.0).toFloat(); }
@@ -361,6 +370,21 @@ class Settings : public QObject
 		void SetHardwareDecoder(const QString &hw_decoder);
 		bool GetUseZeroCopy() const { return settings.value("settings/use_zero_copy", true).toBool(); }
 		void SetUseZeroCopy(bool enabled) { settings.setValue("settings/use_zero_copy", enabled); }
+		bool GetMetalFXUpscaling() const { return settings.value("settings/metalfx_upscaling", false).toBool(); }
+		void SetMetalFXUpscaling(bool enabled) { settings.setValue("settings/metalfx_upscaling", enabled); }
+		// MetalFX upscaling target: 0 = window size, 1 = 2K (2560x1440), 2 = 4K (3840x2160)
+		int GetMetalFXUpscaleTarget() const { return std::clamp(settings.value("settings/metalfx_upscale_target", 0).toInt(), 0, 2); }
+		void SetMetalFXUpscaleTarget(int target) { settings.setValue("settings/metalfx_upscale_target", std::clamp(target, 0, 2)); }
+		bool GetFrameInterpolation() const { return settings.value("settings/frame_interpolation", false).toBool(); }
+		void SetFrameInterpolation(bool enabled) { settings.setValue("settings/frame_interpolation", enabled); }
+		// 0 = VideoToolbox, 1 = MetalFX
+		int GetFrameInterpolationEngine() const { return settings.value("settings/frame_interpolation_engine", 0).toInt(); }
+		void SetFrameInterpolationEngine(int engine) { settings.setValue("settings/frame_interpolation_engine", engine); }
+		// Frame-rate multiplier: 2, 3 or 4
+		int GetFrameInterpolationMultiplier() const { return std::clamp(settings.value("settings/frame_interpolation_multiplier", 2).toInt(), 2, 4); }
+		void SetFrameInterpolationMultiplier(int m) { settings.setValue("settings/frame_interpolation_multiplier", std::clamp(m, 2, 4)); }
+		bool GetShowFpsOverlay() const { return settings.value("settings/show_fps_overlay", true).toBool(); }
+		void SetShowFpsOverlay(bool show) { settings.setValue("settings/show_fps_overlay", show); }
 		bool GetVulkanDeferredSwap() const { return settings.value("settings/vulkan_deferred_swap", false).toBool(); }
 		void SetVulkanDeferredSwap(bool enabled) { settings.setValue("settings/vulkan_deferred_swap", enabled); }
 

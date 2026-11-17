@@ -16,7 +16,7 @@ Item {
     property bool sessionLoading: true
     property list<Item> restoreFocusItems
     readonly property bool useSeparateMenuWindow: Chiaki.window.runtimeRendererBackend === 1
-    readonly property int streamMenuHeight: 200
+    readonly property int streamMenuHeight: 250
     readonly property bool streamStatsVisible: Chiaki.settings.showStreamStats && Chiaki.session && !(menuController.open || menuController.closing) && !sessionLoading && !sessionError && !(Chiaki.settings.audioVideoDisabled & 0x02)
     property int separateMenuX: 0
     property int separateMenuY: 0
@@ -138,6 +138,57 @@ Item {
             open = false;
             view.releaseInput();
             view.updateOverlayInteractionActive();
+        }
+    }
+
+    // Translucent frame-rate counter in the top-left corner.
+    Rectangle {
+        id: fpsOverlay
+        property real displayFps: 0
+        property real streamFps: 0
+        property string mode: ""
+        anchors {
+            top: parent.top
+            left: parent.left
+            topMargin: 12
+            leftMargin: 12
+        }
+        z: 5
+        visible: Chiaki.settings.showFpsOverlay && !!Chiaki.session && !loadingView.visible
+        width: fpsColumn.implicitWidth + 18
+        height: fpsColumn.implicitHeight + 10
+        radius: 8
+        color: Qt.rgba(0, 0, 0, 0.45)
+
+        Timer {
+            interval: 1000
+            repeat: true
+            running: fpsOverlay.visible
+            triggeredOnStart: true
+            onTriggered: {
+                const r = Chiaki.sampleFrameRates();
+                fpsOverlay.displayFps = r.display;
+                fpsOverlay.streamFps = r.stream;
+                fpsOverlay.mode = r.mode;
+            }
+        }
+
+        Column {
+            id: fpsColumn
+            anchors.centerIn: parent
+            spacing: 0
+            Label {
+                text: qsTr("%1 FPS").arg(Math.round(fpsOverlay.displayFps))
+                font.pixelSize: 15
+                font.weight: Font.DemiBold
+                color: "white"
+            }
+            Label {
+                visible: fpsOverlay.mode.length > 0
+                text: qsTr("stream %1 · %2").arg(Math.round(fpsOverlay.streamFps)).arg(fpsOverlay.mode)
+                font.pixelSize: 11
+                color: Qt.rgba(1, 1, 1, 0.7)
+            }
         }
     }
 
@@ -464,29 +515,50 @@ Item {
                     let ctx = getContext("2d");
                     let gradient = ctx.createLinearGradient(0, 0, 0, height);
                     gradient.addColorStop(0.0, Qt.rgba(0.0, 0.0, 0.0, 0.0));
-                    gradient.addColorStop(0.7, Qt.rgba(0.5, 0.5, 0.5, 0.7));
-                    gradient.addColorStop(1.0, Qt.rgba(0.5, 0.5, 0.5, 0.9));
+                    gradient.addColorStop(0.6, Qt.rgba(0.0, 0.0, 0.0, 0.25));
+                    gradient.addColorStop(1.0, Qt.rgba(0.0, 0.0, 0.0, 0.55));
                     ctx.fillStyle = gradient;
                     ctx.fillRect(0, 0, width, height);
                 }
             }
 
-            RowLayout {
+            // Floating control bar, like the macOS video player HUD.
+            Rectangle {
+                id: hud
                 anchors {
-                    left: parent.left
+                    horizontalCenter: parent.horizontalCenter
                     bottom: parent.bottom
-                    leftMargin: 30
-                    bottomMargin: 40
+                    bottomMargin: 28
                 }
-                spacing: 0
+                width: hudRow.implicitWidth + 28
+                height: hudRow.implicitHeight + 20
+                radius: 18
+                color: Qt.rgba(0.11, 0.11, 0.12, 0.86)
+                border.width: 1
+                border.color: Qt.rgba(1, 1, 1, 0.08)
+            }
+
+            RowLayout {
+                id: hudRow
+                anchors.centerIn: hud
+                spacing: 2
 
                 ToolButton {
                     id: closeButton
-                    Layout.rightMargin: 20
-                    text: "×"
-                    padding: 10
-                    font.pixelSize: 50
+                    Layout.rightMargin: 6
+                    text: "\u2715"
+                    implicitWidth: 40
+                    implicitHeight: 40
+                    font.pixelSize: 17
+                    font.weight: Font.DemiBold
                     down: activeFocus
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                    ToolTip.text: Chiaki.session ? qsTr("Disconnect") : qsTr("Back")
+                    background: Rectangle {
+                        radius: width / 2
+                        color: closeButton.down || closeButton.hovered ? Theme.red : Qt.rgba(1, 0.27, 0.23, 0.22)
+                    }
                     onClicked: {
                         if (Chiaki.session)
                             Chiaki.window.close();
@@ -505,11 +577,12 @@ Item {
 
             Slider {
                 id: volumeSlider
-                Layout.rightMargin: 20
+                Layout.rightMargin: 40
+                Layout.leftMargin: 4
                 orientation: Qt.Vertical
                 from: 0
                 to: 128
-                Layout.preferredHeight: 100
+                Layout.preferredHeight: 56
                 padding: 10
                 stepSize: 1
                 value: Chiaki.settings.audioVolume
@@ -519,12 +592,14 @@ Item {
                 Keys.onEscapePressed: menuController.close()
                 Label {
                     anchors {
-                        top: parent.bottom
-                        horizontalCenter: parent.horizontalCenter
-                        leftMargin: 10
+                        left: parent.right
+                        verticalCenter: parent.verticalCenter
+                        leftMargin: 2
                     }
+                    color: Theme.textSecondary
+                    font.pixelSize: Theme.fontCaption
                     text: {
-                        ((parent.value / 128.0) * 100).toFixed(0) + qsTr("% Volume")
+                        ((parent.value / 128.0) * 100).toFixed(0) + "%"
                     }
                 }
             }
@@ -572,7 +647,8 @@ Item {
                 orientation: Qt.Vertical
                 from: -1
                 to: 4
-                Layout.preferredHeight: 100
+                Layout.preferredHeight: 56
+                Layout.rightMargin: 84
                 stepSize: 0.01
                 visible: Chiaki.window.videoMode == ChiakiWindow.VideoMode.Zoom
                 value: Chiaki.window.ZoomFactor
@@ -582,10 +658,12 @@ Item {
                 }
                 Label {
                     anchors {
-                        top: parent.bottom
-                        horizontalCenter: parent.horizontalCenter
-                        leftMargin: 10
+                        left: parent.right
+                        verticalCenter: parent.verticalCenter
+                        leftMargin: 2
                     }
+                    color: Theme.textSecondary
+                    font.pixelSize: Theme.fontCaption
                     text: {
                         if(parent.value === -1)
                             qsTr("No Black Bars")
@@ -605,7 +683,7 @@ Item {
 
             ToolButton {
                 id: stretchButton
-                Layout.rightMargin: 50
+                Layout.rightMargin: 16
                 text: qsTr("Stretch")
                 padding: 10
                 checkable: true
@@ -699,7 +777,7 @@ Item {
             ToolButton {
                 id: customButton
                 text: qsTr("Custom")
-                Layout.rightMargin: 40
+                Layout.rightMargin: 16
                 padding: 10
                 checkable: true
                 checked: Chiaki.window.videoPreset == ChiakiWindow.VideoPreset.Custom
@@ -751,6 +829,28 @@ Item {
             }
             }
 
+            Rectangle {
+                anchors {
+                    right: parent.right
+                    bottom: hud.top
+                    rightMargin: 24
+                    bottomMargin: 14
+                }
+                visible: !!Chiaki.session
+                width: Math.max(statsCol.implicitWidth, 150) + 28
+                height: statsCol.implicitHeight + 22
+                radius: 14
+                color: Qt.rgba(0.11, 0.11, 0.12, 0.86)
+                border.width: 1
+                border.color: Qt.rgba(1, 1, 1, 0.08)
+                Item {
+                    id: statsCol
+                    anchors.centerIn: parent
+                    implicitWidth: 250
+                    implicitHeight: 84
+                }
+            }
+
             Label {
                 anchors {
                     right: consoleNameLabel.right
@@ -759,7 +859,8 @@ Item {
 
                 }
                 text: "Mbps"
-                font.pixelSize: 18
+                color: Theme.textSecondary
+                font.pixelSize: Theme.fontBody
                 visible: Chiaki.session
 
                 Label {
@@ -769,9 +870,9 @@ Item {
                         rightMargin: 5
                     }
                         text: visible && Chiaki.session ? Chiaki.session.measuredBitrate.toFixed(1) : ""
-                    color: Material.accent
+                    color: Theme.accent
                     font.bold: true
-                    font.pixelSize: 28
+                    font.pixelSize: 22
                 }
             }
 
@@ -779,9 +880,11 @@ Item {
                 id: consoleNameLabel
                 anchors {
                     right: parent.right
-                    verticalCenter: parent.verticalCenter
-                    rightMargin: 30
+                    bottom: hud.top
+                    rightMargin: 38
+                    bottomMargin: 50
                 }
+                font.pixelSize: Theme.fontBody
                 text: {
                     if (!Chiaki.session)
                         return "";
@@ -799,7 +902,8 @@ Item {
 
                     Label {
                         text: qsTr("packet loss")
-                        font.pixelSize: 15
+                        color: Theme.textSecondary
+                        font.pixelSize: Theme.fontCaption
                         opacity: parent.visible && Chiaki.session ? 1.0 : 0.0
                         visible: opacity
 
@@ -821,7 +925,8 @@ Item {
                     Label {
                         Layout.leftMargin: droppedFramesLabel.width + 6
                         text: qsTr("dropped frames")
-                        font.pixelSize: 15
+                        color: Theme.textSecondary
+                        font.pixelSize: Theme.fontCaption
                         opacity: parent.visible && Chiaki.window.droppedFrames ? 1.0 : 0.0
                         visible: opacity
 
@@ -1302,4 +1407,5 @@ Item {
                 sessionLoading = false;
         }
     }
+
 }

@@ -37,7 +37,18 @@ DialogView {
     }
 
     Item {
+        // Card behind the form
+        Rectangle {
+            x: formGrid.x - 28
+            y: formGrid.y - 18
+            width: formGrid.width + 56
+            height: formGrid.height + 36
+            radius: Theme.radiusLarge
+            color: Theme.card
+        }
+
         GridLayout {
+            id: formGrid
             anchors {
                 top: parent.top
                 horizontalCenter: parent.horizontalCenter

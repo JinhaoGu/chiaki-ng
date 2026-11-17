@@ -165,13 +165,76 @@ DialogView {
     }
 
     Item {
+        // Section list on the left, like macOS System Settings. The TabBar below stays as the
+        // source of truth for the current section (keyboard and controller code use it), but
+        // it is not shown.
+        Rectangle {
+            id: sidebar
+            anchors {
+                top: parent.top
+                left: parent.left
+                bottom: parent.bottom
+            }
+            width: 210
+            color: Theme.sidebar
+
+            Column {
+                anchors {
+                    fill: parent
+                    topMargin: 14
+                    leftMargin: 10
+                    rightMargin: 10
+                }
+                spacing: 2
+
+                Repeater {
+                    model: bar.count
+                    delegate: AbstractButton {
+                        id: sectionButton
+                        required property int index
+                        readonly property bool current: bar.currentIndex === index
+                        width: parent.width
+                        height: 34
+                        focusPolicy: Qt.NoFocus
+                        hoverEnabled: true
+                        onClicked: bar.currentIndex = index
+                        background: Rectangle {
+                            radius: Theme.radiusSmall + 1
+                            color: sectionButton.current ? Theme.accent
+                                 : (sectionButton.hovered ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
+                        }
+                        contentItem: Label {
+                            leftPadding: 12
+                            verticalAlignment: Text.AlignVCenter
+                            text: bar.itemAt(sectionButton.index) ? bar.itemAt(sectionButton.index).text : ""
+                            font.pixelSize: Theme.fontBody
+                            font.weight: sectionButton.current ? Font.DemiBold : Font.Normal
+                            color: sectionButton.current ? "white" : Theme.textPrimary
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                anchors {
+                    top: parent.top
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+                width: 1
+                color: Theme.separator
+            }
+        }
+
         TabBar {
             id: bar
+            height: 0
+            opacity: 0
+            clip: true
             anchors {
                 top: parent.top
                 left: parent.left
                 right: parent.right
-                topMargin: 5
             }
             TabButton {
                 id: general
@@ -187,7 +250,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 1
+                    visible: (bar.currentIndex == 1) && root.showControllerHints
                 }
             }
 
@@ -205,7 +268,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 0
+                    visible: (bar.currentIndex == 0) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -217,7 +280,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 2
+                    visible: (bar.currentIndex == 2) && root.showControllerHints
                 }
             }
 
@@ -235,7 +298,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 1
+                    visible: (bar.currentIndex == 1) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -247,7 +310,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 3
+                    visible: (bar.currentIndex == 3) && root.showControllerHints
                 }
             }
 
@@ -265,7 +328,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 2
+                    visible: (bar.currentIndex == 2) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -277,7 +340,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 4
+                    visible: (bar.currentIndex == 4) && root.showControllerHints
                 }
             }
 
@@ -295,7 +358,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 3
+                    visible: (bar.currentIndex == 3) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -307,7 +370,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 5
+                    visible: (bar.currentIndex == 5) && root.showControllerHints
                 }
             }
 
@@ -325,7 +388,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 4
+                    visible: (bar.currentIndex == 4) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -337,7 +400,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 6
+                    visible: (bar.currentIndex == 6) && root.showControllerHints
                 }
             }
 
@@ -355,7 +418,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 5
+                    visible: (bar.currentIndex == 5) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -367,7 +430,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 7
+                    visible: (bar.currentIndex == 7) && root.showControllerHints
                 }
             }
 
@@ -385,7 +448,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 6
+                    visible: (bar.currentIndex == 6) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -397,7 +460,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 8
+                    visible: (bar.currentIndex == 8) && root.showControllerHints
                 }
             }
 
@@ -415,17 +478,33 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 7
+                    visible: (bar.currentIndex == 7) && root.showControllerHints
                 }
             }
         }
 
+        // Title of the current section, like the macOS System Settings pane title.
+        Label {
+            id: sectionTitle
+            anchors {
+                top: parent.top
+                left: sidebar.right
+                topMargin: 18
+                leftMargin: 32
+            }
+            text: bar.itemAt(bar.currentIndex) ? bar.itemAt(bar.currentIndex).text : ""
+            font.pixelSize: Theme.fontTitle + 2
+            font.weight: Font.DemiBold
+            color: Theme.textPrimary
+        }
+
         StackLayout {
             anchors {
-                top: bar.bottom
-                left: parent.left
+                top: sectionTitle.bottom
+                left: sidebar.right
                 right: parent.right
                 bottom: parent.bottom
+                topMargin: 0
             }
             currentIndex: bar.currentIndex
             onCurrentIndexChanged: {
@@ -445,6 +524,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, generalLayout.width)
                     contentHeight: generalLayout.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: generalLayout.x - 28
+                        y: generalLayout.y - 18
+                        width: Math.max(generalLayout.width + 56, parent.width - 64)
+                        height: generalLayout.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -454,7 +545,8 @@ DialogView {
                         id: generalLayout
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         spacing: 10
                         GridLayout {
@@ -464,7 +556,7 @@ DialogView {
                             columnSpacing: 20
 
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Action On Disconnect:")
                             }
 
@@ -479,11 +571,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Ask)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Action On Suspend:")
                         }
 
@@ -496,11 +589,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Do Nothing)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Steam Deck Haptics:")
                             visible: (typeof Chiaki.settings.steamDeckHaptics !== "undefined")
                         }
@@ -519,12 +613,13 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                             visible: (typeof Chiaki.settings.steamDeckHaptics !== "undefined")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Steam Deck Vertical:")
                             visible: typeof Chiaki.settings.verticalDeck !== "undefined"
                         }
@@ -543,12 +638,13 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                             visible: typeof Chiaki.settings.verticalDeck !== "undefined"
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Audio/Video:")
                         }
 
@@ -561,11 +657,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Audio and Video Enabled)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Log Directory:")
                         }
 
@@ -592,7 +689,7 @@ DialogView {
 
                         }
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Streamer Mode (Hides Info)")
                         }
                         C.CheckBox {
@@ -603,11 +700,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Stream Menu Shortcut Enabled")
                         }
                         C.CheckBox {
@@ -628,6 +726,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(Checked)")
                             }
                         }
@@ -636,7 +735,7 @@ DialogView {
                             visible: Chiaki.settings.streamMenuEnabled
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Stream Menu Combo:")
                             }
 
@@ -718,6 +817,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(L1+R1+L3+R3)")
                             }
                         }
@@ -737,6 +837,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, videoGrid.width)
                     contentHeight: videoGrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: videoGrid.x - 28
+                        y: videoGrid.y - 18
+                        width: Math.max(videoGrid.width + 56, parent.width - 64)
+                        height: videoGrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -746,14 +858,15 @@ DialogView {
                         id: videoGrid
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         columns: 3
                         rowSpacing: 10
                         columnSpacing: 20
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Hardware Decoder:")
                         }
 
@@ -782,7 +895,7 @@ DialogView {
                             KeyNavigation.priority: KeyNavigation.BeforeItem
                             KeyNavigation.up: zeroCopyCheck
                             KeyNavigation.left: hwDecoderCombo
-                            KeyNavigation.down: windowTypeCombo
+                            KeyNavigation.down: metalFxCheck.visible ? metalFxCheck : windowTypeCombo
                             checked: Chiaki.settings.useZeroCopy
                             onToggled: Chiaki.settings.useZeroCopy = checked
                         }
@@ -790,11 +903,117 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Auto)")
                     }
 
                     Label {
+                        Layout.alignment: Qt.AlignLeft
+                        text: qsTr("MetalFX Upscaling:")
+                        visible: Chiaki.settings.metalFxSupported
+                    }
+
+                    // Off / window size / 2K / 4K (VideoToolbox decoder only). With 2K or 4K the
+                    // renderer then scales the result to the window.
+                    C.ComboBox {
+                        id: metalFxCheck
+                        Layout.preferredWidth: 400
+                        visible: Chiaki.settings.metalFxSupported
+                        model: [qsTr("Off"), qsTr("Window size"), qsTr("2K (2560 × 1440)"), qsTr("4K (3840 × 2160)")]
+                        currentIndex: Chiaki.settings.metalFxUpscaling ? 1 + Chiaki.settings.metalFxUpscaleTarget : 0
+                        KeyNavigation.priority: KeyNavigation.BeforeItem
+                        KeyNavigation.up: zeroCopyCheck
+                        KeyNavigation.down: frameInterpolationCheck.visible ? frameInterpolationCheck : fpsOverlayCheck
+                        onActivated: (index) => {
+                            Chiaki.settings.metalFxUpscaling = index > 0;
+                            if (index > 0)
+                                Chiaki.settings.metalFxUpscaleTarget = index - 1;
+                        }
+                    }
+
+                    Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
+                        text: qsTr("(Off)")
+                        visible: Chiaki.settings.metalFxSupported
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignLeft
+                        text: qsTr("Frame Interpolation:")
+                        visible: Chiaki.settings.frameInterpolationSupported
+                    }
+
+                    // One list for engine and multiplier. 3x/4x need a display that many times faster
+                    // than the stream (for example 30 fps on 120 Hz); the app caps the multiplier to
+                    // the display at stream start. MetalFX makes only the middle frame, so it is 2x only.
+                    C.ComboBox {
+                        id: frameInterpolationCheck
+                        Layout.preferredWidth: 400
+                        visible: Chiaki.settings.frameInterpolationSupported
+                        readonly property var options: {
+                            let o = [{ text: qsTr("Off"), on: false, engine: 0, mult: 2 },
+                                     { text: qsTr("VideoToolbox 2x"), on: true, engine: 0, mult: 2 },
+                                     { text: qsTr("VideoToolbox 3x"), on: true, engine: 0, mult: 3 },
+                                     { text: qsTr("VideoToolbox 4x"), on: true, engine: 0, mult: 4 }];
+                            if (Chiaki.settings.metalFxInterpolationSupported)
+                                o.push({ text: qsTr("MetalFX 2x"), on: true, engine: 1, mult: 2 });
+                            return o;
+                        }
+                        model: options.map(o => o.text)
+                        currentIndex: {
+                            if (!Chiaki.settings.frameInterpolation)
+                                return 0;
+                            for (let i = 1; i < options.length; i++) {
+                                if (options[i].engine === Chiaki.settings.frameInterpolationEngine
+                                        && (options[i].engine === 1 || options[i].mult === Chiaki.settings.frameInterpolationMultiplier))
+                                    return i;
+                            }
+                            return 1;
+                        }
+                        KeyNavigation.priority: KeyNavigation.BeforeItem
+                        KeyNavigation.up: metalFxCheck
+                        KeyNavigation.down: fpsOverlayCheck
+                        onActivated: (index) => {
+                            const o = options[index];
+                            Chiaki.settings.frameInterpolation = o.on;
+                            if (o.on) {
+                                Chiaki.settings.frameInterpolationEngine = o.engine;
+                                Chiaki.settings.frameInterpolationMultiplier = o.mult;
+                            }
+                        }
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
+                        text: qsTr("(Off; +1 frame latency)")
+                        visible: Chiaki.settings.frameInterpolationSupported
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignLeft
+                        text: qsTr("FPS Counter:")
+                    }
+
+                    C.CheckBox {
+                        id: fpsOverlayCheck
+                        text: qsTr("Show the frame rate in the top-left corner while streaming")
+                        KeyNavigation.priority: KeyNavigation.BeforeItem
+                        KeyNavigation.up: frameInterpolationCheck.visible ? frameInterpolationCheck : metalFxCheck
+                        KeyNavigation.down: windowTypeCombo
+                        checked: Chiaki.settings.showFpsOverlay
+                        onToggled: Chiaki.settings.showFpsOverlay = checked
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
+                        text: qsTr("(Checked)")
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Window Type:")
                     }
 
@@ -809,11 +1028,12 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Fullscreen)")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Custom Resolution Width")
                         visible: Chiaki.settings.windowType == 1
                     }
@@ -840,12 +1060,13 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(1920)")
                         visible: Chiaki.settings.windowType == 1
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Custom Resolution Height")
                         visible: Chiaki.settings.windowType == 1
                     }
@@ -872,12 +1093,13 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(1080)")
                         visible: Chiaki.settings.windowType == 1
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Toggle Fullscreen on Double-click:")
                     }
 
@@ -888,11 +1110,12 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Unchecked)")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Hide Cursor during Stream")
                     }
                     C.CheckBox {
@@ -902,11 +1125,12 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Checked)")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Vertical Sync:")
                     }
 
@@ -921,11 +1145,12 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Unchecked)")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Render Preset:")
                     }
 
@@ -948,11 +1173,12 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(High Quality)")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Frame Delivery:")
                     }
 
@@ -972,11 +1198,12 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Direct Mapping)")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Frame Mixer:")
                     }
 
@@ -990,11 +1217,12 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(None)")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Renderer Backend:")
                     }
 
@@ -1013,11 +1241,12 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Vulkan)")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Vulkan Deferred Swap:")
                         visible: Chiaki.settings.rendererBackend == 0
                     }
@@ -1030,12 +1259,13 @@ DialogView {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
                         text: qsTr("(Unchecked)")
                         visible: Chiaki.settings.rendererBackend == 0
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Custom Renderer Settings")
                         visible: Chiaki.window.videoPreset == ChiakiWindow.VideoPreset.Custom
                     }
@@ -1051,7 +1281,7 @@ DialogView {
                     Label { visible: Chiaki.window.videoPreset == ChiakiWindow.VideoPreset.Custom }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Display Settings")
                     }
 
@@ -1080,6 +1310,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, streamGrid.width)
                     contentHeight: streamGrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: streamGrid.x - 28
+                        y: streamGrid.y - 18
+                        width: Math.max(streamGrid.width + 56, parent.width - 64)
+                        height: streamGrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -1089,14 +1331,15 @@ DialogView {
                         id: streamGrid
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         columns: 3
                         rowSpacing: 10
                         columnSpacing: 20
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Settings for:")
                         }
 
@@ -1126,27 +1369,27 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("")
                     }
 
@@ -1161,7 +1404,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Resolution:")
                     }
 
@@ -1250,7 +1493,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("FPS:")
                     }
 
@@ -1327,7 +1570,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Bitrate:")
                     }
 
@@ -1465,7 +1708,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Codec:")
                         visible: selectedConsole == SettingsDialog.Console.PS5
                     }
@@ -1537,6 +1780,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, audiowifigrid.width)
                     contentHeight: audiowifigrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: audiowifigrid.x - 28
+                        y: audiowifigrid.y - 18
+                        width: Math.max(audiowifigrid.width + 56, parent.width - 64)
+                        height: audiowifigrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         id: audiowifiScrollbar
@@ -1552,10 +1807,11 @@ DialogView {
 
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Output Device:")
                         }
 
@@ -1575,11 +1831,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Auto)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Input Device:")
                         }
 
@@ -1599,11 +1856,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Auto)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Audio Buffer Size:")
                         }
 
@@ -1631,11 +1889,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(50 ms)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Audio Volume:")
                         }
 
@@ -1661,11 +1920,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(100%)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Start Mic Unmuted:")
                         }
 
@@ -1676,11 +1936,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Speech Processing:")
                             visible: typeof Chiaki.settings.speechProcessing !== "undefined"
                         }
@@ -1694,12 +1955,13 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                             visible: typeof Chiaki.settings.speechProcessing !== "undefined"
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Noise To Suppress:")
                             visible: if (typeof Chiaki.settings.speechProcessing !== "undefined") {Chiaki.settings.speechProcessing} else {false}
                         }
@@ -1725,12 +1987,13 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(6 dB)")
                             visible: if (typeof Chiaki.settings.speechProcessing !== "undefined") {Chiaki.settings.speechProcessing} else {false}
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Echo To Suppress:")
                             visible: if (typeof Chiaki.settings.speechProcessing !== "undefined") {Chiaki.settings.speechProcessing} else {false}
                         }
@@ -1756,12 +2019,13 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(30 dB)")
                             visible: if (typeof Chiaki.settings.speechProcessing !== "undefined") {Chiaki.settings.speechProcessing} else {false}
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Weak Wifi Notification:")
                         }
 
@@ -1785,11 +2049,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(3%)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Packet Loss Reported Max:")
                         }
 
@@ -1813,11 +2078,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(5%)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Request IDR Frame on FEC Failure")
                         }
 
@@ -1828,11 +2094,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
-                            text: qsTr("(Unchecked)")
+                            color: Theme.textTertiary
+                            text: Qt.platform.os === "osx" ? qsTr("(Checked)") : qsTr("(Unchecked)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Show Stream Stats During Gameplay")
                         }
 
@@ -1844,6 +2111,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                         }
                     }
@@ -1862,6 +2130,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, consolesLayout.width)
                     contentHeight: consolesLayout.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: consolesLayout.x - 28
+                        y: consolesLayout.y - 18
+                        width: Math.max(consolesLayout.width + 56, parent.width - 64)
+                        height: consolesLayout.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -1871,7 +2151,8 @@ DialogView {
                         id: consolesLayout
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         spacing: 10
 
@@ -2189,6 +2470,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, keysGrid.width)
                     contentHeight: keysGrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: keysGrid.x - 28
+                        y: keysGrid.y - 18
+                        width: Math.max(keysGrid.width + 56, parent.width - 64)
+                        height: keysGrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     function ensureItemVisible(item) {
                         if (!item)
@@ -2208,7 +2501,8 @@ DialogView {
                         id: keysGrid
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         columns: 3
                         rowSpacing: 3
@@ -2533,6 +2827,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, controllersLayout.width)
                     contentHeight: controllersLayout.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: controllersLayout.x - 28
+                        y: controllersLayout.y - 18
+                        width: Math.max(controllersLayout.width + 56, parent.width - 64)
+                        height: controllersLayout.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         id: controllersScrollbar
@@ -2543,7 +2849,8 @@ DialogView {
                         id: controllersLayout
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         spacing: 10
                         C.Button {
@@ -2568,7 +2875,7 @@ DialogView {
                             spacing: 10
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Background Controller Events:")
                             }
                             C.CheckBox {
@@ -2582,6 +2889,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(Checked)")
                             }
                         }
@@ -2589,7 +2897,7 @@ DialogView {
                             spacing: 10
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Dpad Touchpad Emulation")
                             }
                             C.CheckBox {
@@ -2610,6 +2918,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(Checked)")
                             }
                         }
@@ -2620,7 +2929,7 @@ DialogView {
                             Layout.alignment: Qt.AlignHCenter
                             visible: Chiaki.settings.dpadTouchEnabled
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Dpad Touch Increment:")
                             }
 
@@ -2654,6 +2963,7 @@ DialogView {
                             Label {
                                 Layout.alignment: Qt.AlignRight
                                 Layout.leftMargin: 100
+                                color: Theme.textTertiary
                                 text: qsTr("(0.3 mm)")
                             }
                         }
@@ -2662,7 +2972,7 @@ DialogView {
                             visible: Chiaki.settings.dpadTouchEnabled
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Dpad Regular/Touch Combo:")
                             }
 
@@ -2744,6 +3054,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(L1+R1+dpad Up)")
                             }
                         }
@@ -2751,7 +3062,7 @@ DialogView {
                             spacing: 10
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Buttons By Position:")
                             }
 
@@ -2774,6 +3085,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(Unchecked)")
                             }
                         }
@@ -2781,7 +3093,7 @@ DialogView {
                             spacing: 10
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Rumble Haptics:")
                             }
 
@@ -2795,6 +3107,7 @@ DialogView {
 
                             Label {
                                 Layout.alignment: Qt.AlignRight
+                                color: Theme.textTertiary
                                 text: qsTr("(Normal)")
                             }
                         }
@@ -2802,7 +3115,7 @@ DialogView {
                             spacing: 10
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("True Haptics Intensity:")
                             }
 
@@ -2833,6 +3146,7 @@ DialogView {
                             Label {
                                 Layout.alignment: Qt.AlignRight
                                 Layout.leftMargin: 250
+                                color: Theme.textTertiary
                                 text: qsTr("(console setting)")
                             }
                         }
@@ -2852,6 +3166,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, remoteGrid.width)
                     contentHeight: remoteGrid.y + remoteGrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: remoteGrid.x - 28
+                        y: remoteGrid.y - 18
+                        width: Math.max(remoteGrid.width + 56, parent.width - 64)
+                        height: remoteGrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -2861,7 +3187,8 @@ DialogView {
                         id: remoteGrid
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                             topMargin: 30
                         }
                         columns: 3
@@ -2905,7 +3232,7 @@ DialogView {
 
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Hole Punching Port Guessing:")
                         }
 
@@ -2918,11 +3245,12 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(Unchecked)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Port Guess Count:")
                         }
 
@@ -2948,11 +3276,12 @@ DialogView {
                         Label {
                             Layout.alignment: Qt.AlignRight
                             Layout.leftMargin: 100
+                            color: Theme.textTertiary
                             text: qsTr("(75)")
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Port Guess Socket Count:")
                         }
 
@@ -2978,6 +3307,7 @@ DialogView {
 
                         Label {
                             Layout.alignment: Qt.AlignRight
+                            color: Theme.textTertiary
                             text: qsTr("(250)")
                             Layout.leftMargin: 100
                         }
@@ -2997,6 +3327,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, configGrid.width)
                     contentHeight: configGrid.y + configGrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: configGrid.x - 28
+                        y: configGrid.y - 18
+                        width: Math.max(configGrid.width + 56, parent.width - 64)
+                        height: configGrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -3006,7 +3348,8 @@ DialogView {
                         id: configGrid
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                             topMargin: 30
                         }
                         columns: 1
@@ -3293,4 +3636,7 @@ DialogView {
             }
         }
     }
+
+
+
 }

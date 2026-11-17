@@ -15,7 +15,8 @@ Dialog {
     x: Math.round((root.width - width) / 2)
     y: Math.round((root.height - height) / 2)
     modal: true
-    Material.roundedScale: Material.MediumScale
+    Material.roundedScale: Material.LargeScale
+    Material.background: Theme.card
     onOpened: label.forceActiveFocus(Qt.TabFocusReason)
     onAccepted: {
         newDialogOpen = true;
@@ -62,11 +63,12 @@ Dialog {
                 text: qsTr("Yes")
                 Material.background: Material.accent
                 flat: true
-                leftPadding: 50
+                leftPadding: root.showControllerHints ? 50 : undefined
                 onClicked: dialog.accept()
                 Material.roundedScale: Material.SmallScale
 
                 Image {
+                    visible: root.showControllerHints
                     anchors {
                         left: parent.left
                         verticalCenter: parent.verticalCenter
@@ -83,11 +85,12 @@ Dialog {
                 Material.background: Material.accent
                 text: qsTr("No")
                 flat: true
-                leftPadding: 50
+                leftPadding: root.showControllerHints ? 50 : undefined
                 onClicked: dialog.reject()
                 Material.roundedScale: Material.SmallScale
 
                 Image {
+                    visible: root.showControllerHints
                     anchors {
                         left: parent.left
                         verticalCenter: parent.verticalCenter

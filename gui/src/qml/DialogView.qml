@@ -49,73 +49,97 @@ Item {
         }
     }
 
-    ToolBar {
+    Rectangle {
+        anchors.fill: parent
+        color: Theme.background
+        z: -1
+    }
+
+    // Page header: back button and title on the left, the page action on the right.
+    Item {
         id: toolBar
         anchors {
             top: parent.top
             left: parent.left
             right: parent.right
         }
-        height: 80
+        height: 64
 
-        RowLayout {
+        Row {
             anchors {
-                fill: parent
-                leftMargin: 10
-                rightMargin: 10
+                left: parent.left
+                leftMargin: Theme.margin - 10
+                verticalCenter: parent.verticalCenter
             }
+            spacing: 6
 
-            Button {
-                Layout.fillHeight: true
-                Layout.preferredWidth: 100
-                flat: true
-                text: "❮"
+            AbstractButton {
+                id: backButton
                 focusPolicy: Qt.NoFocus
-                Material.roundedScale: Material.SmallScale
+                hoverEnabled: true
+                width: 34; height: 34
+                anchors.verticalCenter: parent.verticalCenter
                 onClicked: {
                     dialog.rejected();
                     dialog.close();
                 }
+                background: Rectangle {
+                    radius: Theme.radiusSmall + 2
+                    color: backButton.down ? Theme.control : (backButton.hovered ? Theme.card : "transparent")
+                }
+                contentItem: Label {
+                    text: "\u2039"
+                    font.pixelSize: 30
+                    color: Theme.textPrimary
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    topPadding: -4
+                }
             }
 
-            Item { Layout.fillWidth: true }
-
-            Button {
-                id: okButton
-                Layout.fillHeight: true
-                flat: true
-                padding: 30
-                font.pixelSize: 25
-                focusPolicy: Qt.NoFocus
-                Material.roundedScale: Material.SmallScale
-                onClicked: dialog.accepted()
-                icon.source: "qrc:/icons/options.svg";
-                icon.width: 50
-                icon.height: 50
+            Column {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 1
+                Label {
+                    id: titleLabel
+                    font.pixelSize: Theme.fontTitle
+                    font.weight: Font.DemiBold
+                    color: Theme.textPrimary
+                }
+                Label {
+                    id: headerLabel
+                    visible: text.length > 0
+                    font.pixelSize: Theme.fontCaption
+                    color: Theme.textSecondary
+                }
             }
         }
 
-        Label {
-            id: titleLabel
-            anchors.centerIn: parent
-            horizontalAlignment: Qt.AlignHCenter
-            verticalAlignment: Qt.AlignVCenter
-            font.bold: true
-            font.pixelSize: 26
-        }
-
-        Label {
-            id: headerLabel
+        Button {
+            id: okButton
             anchors {
-                top: parent.top
-                left: titleLabel.right
                 right: parent.right
+                rightMargin: Theme.margin
                 verticalCenter: parent.verticalCenter
             }
-            horizontalAlignment: Qt.AlignHCenter
-            verticalAlignment: Qt.AlignVCenter
-            font.bold: true
-            font.pixelSize: 14
+            highlighted: true
+            focusPolicy: Qt.NoFocus
+            Material.roundedScale: Material.SmallScale
+            Material.accent: Theme.accent
+            onClicked: dialog.accepted()
+            icon.source: root.showControllerHints ? "qrc:/icons/options.svg" : ""
+            icon.width: 20
+            icon.height: 20
+        }
+
+        Rectangle {
+            anchors {
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+            }
+            height: 1
+            color: Theme.separator
         }
     }
 

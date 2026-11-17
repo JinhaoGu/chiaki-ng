@@ -1,6 +1,15 @@
 <RCC>
   <qresource prefix="/icons">
     <file>settings-20px.svg</file>
+    <file>ui-refresh.svg</file>
+    <file>ui-power.svg</file>
+    <file>ui-key.svg</file>
+    <file>ui-hide.svg</file>
+    <file>ui-trash.svg</file>
+    <file>ui-plus.svg</file>
+    <file>ui-gear.svg</file>
+    <file>ui-steam.svg</file>
+    <file>ui-play.svg</file>
     <file>add-24px.svg</file>
     <file>discover-24px.svg</file>
     <file>discover-off-24px.svg</file>
