@@ -532,8 +532,11 @@ bool QmlBackend::prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_
     return frame_has_planes(frame.frame);
 }
 
-void QmlBackend::deliverFrame(ChiakiFfmpegFrame frame, int32_t frames_lost, bool use_opengl_renderer)
+void QmlBackend::deliverFrame(ChiakiFfmpegFrame frame, int32_t frames_lost, bool use_opengl_renderer, bool interpolated)
 {
+    fps_frames_total.fetch_add(1, std::memory_order_relaxed);
+    if (!interpolated)
+        fps_frames_real.fetch_add(1, std::memory_order_relaxed);
     const qint64 prepare_begin_us = static_cast<qint64>(chiaki_time_now_monotonic_us());
     if (!prepareFrameForPresentation(frame, use_opengl_renderer))
     {
@@ -606,7 +609,7 @@ void QmlBackend::onFrameInterpolated(quint64 seq, std::vector<AVFrame *> frames,
         f.pts = base_pts + k * step;
         f.duration = step;
         if (k == 0) {
-            deliverFrame(f, 0, use_opengl_renderer);
+            deliverFrame(f, 0, use_opengl_renderer, true);
             continue;
         }
         QTimer::singleShot(std::max(1, int(std::lround(step * k * 1000.0))), frame_context,
@@ -615,7 +618,7 @@ void QmlBackend::onFrameInterpolated(quint64 seq, std::vector<AVFrame *> frames,
             const bool still_pending = std::any_of(interp_pending.begin(), interp_pending.end(),
                                                    [seq](const InterpPending &p) { return p.seq == seq; });
             if (still_pending)
-                deliverFrame(f, 0, use_opengl_renderer);
+                deliverFrame(f, 0, use_opengl_renderer, true);
             else
                 av_frame_free(&f.frame);
         });
@@ -635,6 +638,35 @@ void QmlBackend::resetFrameInterpolation()
         frame_interpolator->Reset();
 }
 #endif
+
+QVariantMap QmlBackend::sampleFrameRates()
+{
+    const qint64 now = static_cast<qint64>(chiaki_time_now_monotonic_us());
+    const quint64 total = fps_frames_total.load(std::memory_order_relaxed);
+    const quint64 real = fps_frames_real.load(std::memory_order_relaxed);
+    QVariantMap out;
+    if (fps_last_us > 0 && now > fps_last_us) {
+        const double secs = (now - fps_last_us) / 1e6;
+        out["display"] = (total - fps_last_total) / secs;
+        out["stream"] = (real - fps_last_real) / secs;
+    } else {
+        out["display"] = 0.0;
+        out["stream"] = 0.0;
+    }
+    fps_last_us = now;
+    fps_last_total = total;
+    fps_last_real = real;
+    QString mode;
+#ifdef Q_OS_MACOS
+    if (frame_interpolation.load(std::memory_order_relaxed)) {
+        const bool metalfx = frame_interpolation_engine.load(std::memory_order_relaxed) == 1;
+        const int m = metalfx ? 2 : frame_interpolation_multiplier.load(std::memory_order_relaxed);
+        mode = QStringLiteral("%1 %2x").arg(metalfx ? QStringLiteral("MetalFX") : QStringLiteral("VideoToolbox")).arg(m);
+    }
+#endif
+    out["mode"] = mode;
+    return out;
+}
 
 QmlBackend::~QmlBackend()
 {

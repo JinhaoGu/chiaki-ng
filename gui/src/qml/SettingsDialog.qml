@@ -949,7 +949,7 @@ DialogView {
                         }
                         KeyNavigation.priority: KeyNavigation.BeforeItem
                         KeyNavigation.up: metalFxCheck
-                        KeyNavigation.down: windowTypeCombo
+                        KeyNavigation.down: fpsOverlayCheck
                         onActivated: (index) => {
                             const o = options[index];
                             Chiaki.settings.frameInterpolation = o.on;
@@ -965,6 +965,27 @@ DialogView {
                         color: Theme.textTertiary
                         text: qsTr("(Off; +1 frame latency)")
                         visible: Chiaki.settings.frameInterpolationSupported
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignRight
+                        text: qsTr("FPS Counter:")
+                    }
+
+                    C.CheckBox {
+                        id: fpsOverlayCheck
+                        text: qsTr("Show the frame rate in the top-left corner while streaming")
+                        KeyNavigation.priority: KeyNavigation.BeforeItem
+                        KeyNavigation.up: frameInterpolationCheck.visible ? frameInterpolationCheck : metalFxCheck
+                        KeyNavigation.down: windowTypeCombo
+                        checked: Chiaki.settings.showFpsOverlay
+                        onToggled: Chiaki.settings.showFpsOverlay = checked
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
+                        text: qsTr("(Checked)")
                     }
 
                     Label {

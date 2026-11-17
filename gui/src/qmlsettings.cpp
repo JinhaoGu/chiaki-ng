@@ -636,6 +636,17 @@ void QmlSettings::setFrameInterpolationEngine(int engine)
     emit frameInterpolationEngineChanged();
 }
 
+bool QmlSettings::showFpsOverlay() const
+{
+    return settings->GetShowFpsOverlay();
+}
+
+void QmlSettings::setShowFpsOverlay(bool show)
+{
+    settings->SetShowFpsOverlay(show);
+    emit showFpsOverlayChanged();
+}
+
 int QmlSettings::frameInterpolationMultiplier() const
 {
     return settings->GetFrameInterpolationMultiplier();

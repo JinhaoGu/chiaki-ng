@@ -61,6 +61,7 @@ class QmlSettings : public QObject
     Q_PROPERTY(int frameInterpolationEngine READ frameInterpolationEngine WRITE setFrameInterpolationEngine NOTIFY frameInterpolationEngineChanged)
     Q_PROPERTY(bool metalFxInterpolationSupported READ metalFxInterpolationSupported CONSTANT)
     Q_PROPERTY(int frameInterpolationMultiplier READ frameInterpolationMultiplier WRITE setFrameInterpolationMultiplier NOTIFY frameInterpolationMultiplierChanged)
+    Q_PROPERTY(bool showFpsOverlay READ showFpsOverlay WRITE setShowFpsOverlay NOTIFY showFpsOverlayChanged)
     Q_PROPERTY(bool vulkanDeferredSwap READ vulkanDeferredSwap WRITE setVulkanDeferredSwap NOTIFY vulkanDeferredSwapChanged)
     Q_PROPERTY(int windowType READ windowType WRITE setWindowType NOTIFY windowTypeChanged)
     Q_PROPERTY(uint customResolutionWidth READ customResolutionWidth WRITE setCustomResolutionWidth NOTIFY customResolutionWidthChanged)
@@ -313,6 +314,8 @@ public:
     bool metalFxInterpolationSupported() const;
     int frameInterpolationMultiplier() const;
     void setFrameInterpolationMultiplier(int m);
+    bool showFpsOverlay() const;
+    void setShowFpsOverlay(bool show);
     bool vulkanDeferredSwap() const;
     void setVulkanDeferredSwap(bool enabled);
 
@@ -689,6 +692,7 @@ signals:
     void frameInterpolationChanged();
     void frameInterpolationEngineChanged();
     void frameInterpolationMultiplierChanged();
+    void showFpsOverlayChanged();
     void windowTypeChanged();
     void customResolutionWidthChanged();
     void customResolutionHeightChanged();

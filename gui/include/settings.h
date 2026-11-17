@@ -380,6 +380,8 @@ class Settings : public QObject
 		// Frame-rate multiplier: 2, 3 or 4
 		int GetFrameInterpolationMultiplier() const { return std::clamp(settings.value("settings/frame_interpolation_multiplier", 2).toInt(), 2, 4); }
 		void SetFrameInterpolationMultiplier(int m) { settings.setValue("settings/frame_interpolation_multiplier", std::clamp(m, 2, 4)); }
+		bool GetShowFpsOverlay() const { return settings.value("settings/show_fps_overlay", true).toBool(); }
+		void SetShowFpsOverlay(bool show) { settings.setValue("settings/show_fps_overlay", show); }
 		bool GetVulkanDeferredSwap() const { return settings.value("settings/vulkan_deferred_swap", false).toBool(); }
 		void SetVulkanDeferredSwap(bool enabled) { settings.setValue("settings/vulkan_deferred_swap", enabled); }
 
