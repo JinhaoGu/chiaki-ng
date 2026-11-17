@@ -332,13 +332,20 @@ bool MetalFXUpscaler::IsSupported()
 
 AVFrame *MetalFXUpscaler::Process(const AVFrame *src, int target_width, int target_height)
 {
-	if (impl->broken || !src || src->format != AV_PIX_FMT_VIDEOTOOLBOX || !src->data[3])
+	if (!src || src->format != AV_PIX_FMT_VIDEOTOOLBOX || !src->data[3])
+		return nullptr;
+	return ProcessPixelBuffer(src->data[3], src, target_width, target_height);
+}
+
+AVFrame *MetalFXUpscaler::ProcessPixelBuffer(void *pixel_buffer, const AVFrame *src, int target_width, int target_height)
+{
+	if (impl->broken || !pixel_buffer || !src)
 		return nullptr;
 	if (target_width <= 0 || target_height <= 0)
 		return nullptr;
 
 	@autoreleasepool {
-		CVPixelBufferRef in_pb = reinterpret_cast<CVPixelBufferRef>(src->data[3]);
+		CVPixelBufferRef in_pb = static_cast<CVPixelBufferRef>(pixel_buffer);
 		const OSType in_fmt = CVPixelBufferGetPixelFormatType(in_pb);
 		bool ten_bit;
 		switch (in_fmt) {

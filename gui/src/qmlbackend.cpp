@@ -454,7 +454,19 @@ QmlBackend::QmlBackend(Settings *settings, QmlMainWindow *window)
     refreshPsnToken();
 }
 
-bool QmlBackend::prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_opengl_renderer)
+#ifdef Q_OS_MACOS
+QSize QmlBackend::metalFxTargetSize() const
+{
+    // Fixed 2K/4K targets ignore the window; the renderer then scales the result to the window.
+    switch (metalfx_upscale_target.load(std::memory_order_relaxed)) {
+    case 1: return QSize(2560, 1440);
+    case 2: return QSize(3840, 2160);
+    default: return window ? window->presentationPixelSize() : QSize();
+    }
+}
+#endif
+
+bool QmlBackend::prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_opengl_renderer, bool interpolated)
 {
     if (!frame.frame)
         return false;
@@ -462,6 +474,26 @@ bool QmlBackend::prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_
     if (frame.frame->format == AV_PIX_FMT_NONE)
         return false;
 
+#ifdef Q_OS_MACOS
+    // Interpolated frames are software NV12 frames whose buffer is an IOSurface-backed
+    // CVPixelBuffer (the AVBuffer's opaque). Upscale them like real frames, so sharp and
+    // soft frames do not alternate.
+    if (interpolated && metalfx_upscaling.load(std::memory_order_relaxed) && frame.frame->buf[0]) {
+        if (!metalfx_upscaler)
+            metalfx_upscaler = new MetalFXUpscaler();
+        if (AVFrame *upscaled = metalfx_upscaler->ProcessPixelBuffer(av_buffer_get_opaque(frame.frame->buf[0]),
+                                                                    frame.frame, metalFxTargetSize().width(), metalFxTargetSize().height())) {
+            static bool logged = false;
+            if (!logged) {
+                logged = true;
+                qCInfo(chiakiGui) << "MetalFX upscaling interpolated frames to" << upscaled->width << "x" << upscaled->height;
+            }
+            av_frame_free(&frame.frame);
+            frame.frame = upscaled;
+        }
+        return frame_has_planes(frame.frame);
+    }
+#endif
     if (!frame.frame->hw_frames_ctx)
         return frame_has_planes(frame.frame);
 
@@ -472,19 +504,10 @@ bool QmlBackend::prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_
 #ifdef Q_OS_MACOS
     // MetalFX upscaling replaces the GPU->CPU transfer below: the upscaled
     // frame already lives in CPU-visible IOSurface memory.
-    // Upscaling is skipped while interpolating: interpolated frames are not upscaled, and
-    // alternating sharp and soft frames would flicker.
-    if (metalfx_upscaling.load(std::memory_order_relaxed) && !frame_interpolation.load(std::memory_order_relaxed)
-        && frame.frame->format == AV_PIX_FMT_VIDEOTOOLBOX) {
+    if (metalfx_upscaling.load(std::memory_order_relaxed) && frame.frame->format == AV_PIX_FMT_VIDEOTOOLBOX) {
         if (!metalfx_upscaler)
             metalfx_upscaler = new MetalFXUpscaler();
-        // Fixed 2K/4K targets ignore the window; the renderer then scales the result to the window.
-        QSize target;
-        switch (metalfx_upscale_target.load(std::memory_order_relaxed)) {
-        case 1: target = QSize(2560, 1440); break;
-        case 2: target = QSize(3840, 2160); break;
-        default: target = window ? window->presentationPixelSize() : QSize(); break;
-        }
+        const QSize target = metalFxTargetSize();
         AVFrame *upscaled = metalfx_upscaler->Process(frame.frame, target.width(), target.height());
         if (upscaled) {
             if (!metalfx_logged) {
@@ -544,7 +567,7 @@ void QmlBackend::deliverFrame(ChiakiFfmpegFrame frame, int32_t frames_lost, bool
     if (!interpolated)
         fps_frames_real.fetch_add(1, std::memory_order_relaxed);
     const qint64 prepare_begin_us = static_cast<qint64>(chiaki_time_now_monotonic_us());
-    if (!prepareFrameForPresentation(frame, use_opengl_renderer))
+    if (!prepareFrameForPresentation(frame, use_opengl_renderer, interpolated))
     {
         av_frame_free(&frame.frame);
         return;

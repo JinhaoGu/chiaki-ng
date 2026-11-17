@@ -176,12 +176,13 @@ public:
     void setIsAppActive();
 
     void profileChanged();
-    bool prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_opengl_renderer);
+    bool prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_opengl_renderer, bool interpolated = false);
     void deliverFrame(ChiakiFfmpegFrame frame, int32_t frames_lost, bool use_opengl_renderer, bool interpolated = false);
 #ifdef Q_OS_MACOS
     void flushInterpolationUpTo(quint64 seq, bool use_opengl_renderer);
     void onFrameInterpolated(quint64 seq, std::vector<AVFrame *> frames, bool use_opengl_renderer);
     void resetFrameInterpolation();
+    QSize metalFxTargetSize() const;
 #endif
     void prepareStartupPresentation(bool present_warmup);
     void applyStartupWindowSizing();

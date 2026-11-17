@@ -39,6 +39,13 @@ public:
 	AVFrame *Process(const AVFrame *src, int target_width, int target_height);
 
 	/**
+	 * Like Process(), for a frame whose pixels are in an IOSurface-backed
+	 * CVPixelBuffer (passed as void* to keep CoreVideo out of this header), such
+	 * as an interpolated frame. `src` provides size and color properties.
+	 */
+	AVFrame *ProcessPixelBuffer(void *pixel_buffer, const AVFrame *src, int target_width, int target_height);
+
+	/**
 	 * If `frame` came from Process(), returns its backing IOSurfaceRef (borrowed,
 	 * valid while the frame lives) and its allocation size, so a Vulkan renderer
 	 * can import it as a texture instead of uploading the pixels. Else nullptr.
