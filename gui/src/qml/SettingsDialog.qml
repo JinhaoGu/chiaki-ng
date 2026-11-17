@@ -509,6 +509,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, generalLayout.width)
                     contentHeight: generalLayout.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: generalLayout.x - 28
+                        y: generalLayout.y - 18
+                        width: generalLayout.width + 56
+                        height: generalLayout.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -809,6 +821,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, videoGrid.width)
                     contentHeight: videoGrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: videoGrid.x - 28
+                        y: videoGrid.y - 18
+                        width: videoGrid.width + 56
+                        height: videoGrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -1188,6 +1212,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, streamGrid.width)
                     contentHeight: streamGrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: streamGrid.x - 28
+                        y: streamGrid.y - 18
+                        width: streamGrid.width + 56
+                        height: streamGrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -1645,6 +1681,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, audiowifigrid.width)
                     contentHeight: audiowifigrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: audiowifigrid.x - 28
+                        y: audiowifigrid.y - 18
+                        width: audiowifigrid.width + 56
+                        height: audiowifigrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         id: audiowifiScrollbar
@@ -1982,6 +2030,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, consolesLayout.width)
                     contentHeight: consolesLayout.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: consolesLayout.x - 28
+                        y: consolesLayout.y - 18
+                        width: consolesLayout.width + 56
+                        height: consolesLayout.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -2309,6 +2369,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, keysGrid.width)
                     contentHeight: keysGrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: keysGrid.x - 28
+                        y: keysGrid.y - 18
+                        width: keysGrid.width + 56
+                        height: keysGrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     function ensureItemVisible(item) {
                         if (!item)
@@ -2653,6 +2725,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, controllersLayout.width)
                     contentHeight: controllersLayout.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: controllersLayout.x - 28
+                        y: controllersLayout.y - 18
+                        width: controllersLayout.width + 56
+                        height: controllersLayout.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         id: controllersScrollbar
@@ -2979,6 +3063,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, remoteGrid.width)
                     contentHeight: remoteGrid.y + remoteGrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: remoteGrid.x - 28
+                        y: remoteGrid.y - 18
+                        width: remoteGrid.width + 56
+                        height: remoteGrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -3127,6 +3223,18 @@ DialogView {
                     clip: true
                     contentWidth: Math.max(width, configGrid.width)
                     contentHeight: configGrid.y + configGrid.height
+                    topMargin: 18
+                    bottomMargin: 40
+                    // Card behind the form, like a grouped section in macOS settings.
+                    Rectangle {
+                        z: -1
+                        x: configGrid.x - 28
+                        y: configGrid.y - 18
+                        width: configGrid.width + 56
+                        height: configGrid.height + 36
+                        radius: Theme.radiusLarge
+                        color: Theme.card
+                    }
                     flickableDirection: Flickable.AutoFlickIfNeeded
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AlwaysOn
@@ -3423,4 +3531,5 @@ DialogView {
             }
         }
     }
+
 }
