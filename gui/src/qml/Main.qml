@@ -12,7 +12,11 @@ Item {
     readonly property bool preferSeparateStreamSettingsWindows: Chiaki.window.runtimeRendererBackend === 1 && Chiaki.session
     property bool useSeparateStreamSettingsWindows: false
     Material.theme: Material.Dark
-    Material.accent: "#00a7ff"
+    // Controller button glyphs are shown only while a controller is connected.
+    readonly property bool showControllerHints: Chiaki.controllers.length > 0
+    Material.accent: Theme.accent
+    Material.background: Theme.background
+    Material.foreground: Theme.textPrimary
 
     function controllerButton(name) {
         let type = "deck";
@@ -459,10 +463,11 @@ Item {
         property alias text: infoDialogLabel.text
         property Item restoreFocusItem
         parent: Overlay.overlay
+        Material.background: Theme.card
+        Material.roundedScale: Material.LargeScale
         x: Math.round((root.width - width) / 2)
         y: Math.round((root.height - height) / 2)
         modal: true
-        Material.roundedScale: Material.MediumScale
         onOpened: infoDialogLabel.forceActiveFocus(Qt.TabFocusReason)
         onClosed: {
             if (restoreFocusItem)
@@ -491,11 +496,12 @@ Item {
                     text: qsTr("OK")
                     Material.background: Material.accent
                     flat: true
-                    leftPadding: 50
+                    leftPadding: root.showControllerHints ? 50 : undefined
                     onClicked: infoDialog.close()
                     Material.roundedScale: Material.SmallScale
 
                     Image {
+                        visible: root.showControllerHints
                         anchors {
                             left: parent.left
                             verticalCenter: parent.verticalCenter

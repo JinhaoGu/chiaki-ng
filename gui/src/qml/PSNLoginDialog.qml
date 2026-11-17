@@ -92,6 +92,7 @@ DialogView {
                         flat: true
                         text: "reload + clear cookies"
                         Image {
+                            visible: root.showControllerHints
                             anchors {
                                 left: parent.left
                                 verticalCenter: parent.verticalCenter
@@ -122,6 +123,7 @@ DialogView {
                         Layout.preferredWidth: 300
                         flat: true
                         Image {
+                            visible: root.showControllerHints
                             anchors {
                                 left: parent.left
                                 verticalCenter: parent.verticalCenter

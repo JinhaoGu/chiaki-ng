@@ -187,7 +187,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 1
+                    visible: (bar.currentIndex == 1) && root.showControllerHints
                 }
             }
 
@@ -205,7 +205,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 0
+                    visible: (bar.currentIndex == 0) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -217,7 +217,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 2
+                    visible: (bar.currentIndex == 2) && root.showControllerHints
                 }
             }
 
@@ -235,7 +235,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 1
+                    visible: (bar.currentIndex == 1) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -247,7 +247,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 3
+                    visible: (bar.currentIndex == 3) && root.showControllerHints
                 }
             }
 
@@ -265,7 +265,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 2
+                    visible: (bar.currentIndex == 2) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -277,7 +277,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 4
+                    visible: (bar.currentIndex == 4) && root.showControllerHints
                 }
             }
 
@@ -295,7 +295,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 3
+                    visible: (bar.currentIndex == 3) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -307,7 +307,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 5
+                    visible: (bar.currentIndex == 5) && root.showControllerHints
                 }
             }
 
@@ -325,7 +325,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 4
+                    visible: (bar.currentIndex == 4) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -337,7 +337,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 6
+                    visible: (bar.currentIndex == 6) && root.showControllerHints
                 }
             }
 
@@ -355,7 +355,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 5
+                    visible: (bar.currentIndex == 5) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -367,7 +367,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 7
+                    visible: (bar.currentIndex == 7) && root.showControllerHints
                 }
             }
 
@@ -385,7 +385,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 6
+                    visible: (bar.currentIndex == 6) && root.showControllerHints
                 }
                 Image {
                     anchors {
@@ -397,7 +397,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/l1.svg"
-                    visible: bar.currentIndex == 8
+                    visible: (bar.currentIndex == 8) && root.showControllerHints
                 }
             }
 
@@ -415,7 +415,7 @@ DialogView {
                     height: 28
                     sourceSize: Qt.size(width, height)
                     source: "qrc:/icons/r1.svg"
-                    visible: bar.currentIndex == 7
+                    visible: (bar.currentIndex == 7) && root.showControllerHints
                 }
             }
         }
