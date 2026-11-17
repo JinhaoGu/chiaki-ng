@@ -5,8 +5,10 @@
 #import <Foundation/Foundation.h>
 #import <VideoToolbox/VideoToolbox.h>
 
+#include <algorithm>
 #include <atomic>
 #include <memory>
+#include <vector>
 
 extern "C" {
 #include <libavutil/pixfmt.h>
@@ -62,6 +64,7 @@ struct VTFrameInterpolator::Impl
 	CVPixelBufferRef previous = nullptr;
 	AVFrame *previous_props = nullptr;
 	int width = 0, height = 0;
+	int multiplier = 0;
 	OSType format = 0;
 	int64_t sequence = 0;
 	bool failed = false;
@@ -80,6 +83,7 @@ struct VTFrameInterpolator::Impl
 			pool = nullptr;
 		}
 		width = height = 0;
+		multiplier = 0;
 	}
 
 	void ForgetPrevious()
@@ -91,12 +95,15 @@ struct VTFrameInterpolator::Impl
 		av_frame_free(&previous_props);
 	}
 
-	bool StartSession(int w, int h)
+	bool StartSession(int w, int h, int mult)
 	{
 		EndSession();
 		if (@available(macOS 26.0, *)) {
+			// One interpolated frame gives the 0.5 point; two give 0.25, 0.5 and 0.75. Other
+			// points (thirds) are accepted with two but cost more.
+			const NSInteger count = mult <= 2 ? 1 : 2;
 			VTLowLatencyFrameInterpolationConfiguration *config =
-				[[VTLowLatencyFrameInterpolationConfiguration alloc] initWithFrameWidth:w frameHeight:h numberOfInterpolatedFrames:1];
+				[[VTLowLatencyFrameInterpolationConfiguration alloc] initWithFrameWidth:w frameHeight:h numberOfInterpolatedFrames:count];
 			if (!config)
 				return false;
 			VTFrameProcessor *p = [VTFrameProcessor new];
@@ -113,6 +120,7 @@ struct VTFrameInterpolator::Impl
 			processor = p;
 			width = w;
 			height = h;
+			multiplier = mult;
 			return true;
 		}
 		return false;
@@ -144,7 +152,7 @@ void VTFrameInterpolator::Reset()
 	impl->ForgetPrevious();
 }
 
-bool VTFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, Callback done)
+bool VTFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, int multiplier, Callback done)
 {
 	if (impl->failed || !src || src->format != AV_PIX_FMT_VIDEOTOOLBOX || !src->data[3])
 		return false;
@@ -158,9 +166,11 @@ bool VTFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, Callbac
 		return false;
 	}
 
-	const bool restart = discontinuity || w != impl->width || h != impl->height || format != impl->format;
-	if (w != impl->width || h != impl->height) {
-		if (!impl->StartSession(w, h)) {
+	multiplier = std::clamp(multiplier, 2, MaxMultiplier());
+	const bool restart = discontinuity || w != impl->width || h != impl->height || format != impl->format
+		|| multiplier != impl->multiplier;
+	if (w != impl->width || h != impl->height || multiplier != impl->multiplier) {
+		if (!impl->StartSession(w, h, multiplier)) {
 			NSLog(@"VTFrameInterpolator: cannot interpolate %dx%d, disabling", w, h);
 			impl->failed = true;
 			impl->ForgetPrevious();
@@ -196,25 +206,38 @@ bool VTFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, Callbac
 	av_frame_free(&previous_props);
 
 	if (@available(macOS 26.0, *)) {
-		CVPixelBufferRef out_pb = nullptr;
-		if (CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, impl->pool, &out_pb) != kCVReturnSuccess) {
-			CVPixelBufferRelease(previous);
-			return false;
+		const int count = multiplier - 1;
+		std::vector<CVPixelBufferRef> outs;
+		NSMutableArray<VTFrameProcessorFrame *> *dst_frames = [NSMutableArray arrayWithCapacity:count];
+		NSMutableArray<NSNumber *> *phases = [NSMutableArray arrayWithCapacity:count];
+		bool ok = true;
+		for (int k = 1; k <= count && ok; k++) {
+			CVPixelBufferRef out_pb = nullptr;
+			if (CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, impl->pool, &out_pb) != kCVReturnSuccess) {
+				ok = false;
+				break;
+			}
+			outs.push_back(out_pb);
+			VTFrameProcessorFrame *f = [[VTFrameProcessorFrame alloc] initWithBuffer:out_pb
+				presentationTimeStamp:CMTimeMake((seq - 1) * multiplier + k, int32_t(120 * multiplier))];
+			if (!f) {
+				ok = false;
+				break;
+			}
+			[dst_frames addObject:f];
+			[phases addObject:@(float(k) / float(multiplier))];
 		}
 		// The VTFrameProcessorFrame objects retain the pixel buffers until processing ends.
-		VTFrameProcessorFrame *prev_frame = [[VTFrameProcessorFrame alloc] initWithBuffer:previous presentationTimeStamp:CMTimeMake(seq - 1, 120)];
-		VTFrameProcessorFrame *cur_frame = [[VTFrameProcessorFrame alloc] initWithBuffer:current presentationTimeStamp:CMTimeMake(seq, 120)];
-		VTFrameProcessorFrame *dst_frame = [[VTFrameProcessorFrame alloc] initWithBuffer:out_pb presentationTimeStamp:CMTimeMake(seq * 2 - 1, 240)];
+		VTFrameProcessorFrame *prev_frame = ok ? [[VTFrameProcessorFrame alloc] initWithBuffer:previous presentationTimeStamp:CMTimeMake(seq - 1, 120)] : nil;
+		VTFrameProcessorFrame *cur_frame = ok ? [[VTFrameProcessorFrame alloc] initWithBuffer:current presentationTimeStamp:CMTimeMake(seq, 120)] : nil;
 		CVPixelBufferRelease(previous);
-		if (!prev_frame || !cur_frame || !dst_frame) {
-			CVPixelBufferRelease(out_pb);
-			return false;
-		}
-		VTLowLatencyFrameInterpolationParameters *params =
-			[[VTLowLatencyFrameInterpolationParameters alloc] initWithSourceFrame:cur_frame previousFrame:prev_frame
-															 interpolationPhase:@[@0.5f] destinationFrames:@[dst_frame]];
+		VTLowLatencyFrameInterpolationParameters *params = (prev_frame && cur_frame)
+			? [[VTLowLatencyFrameInterpolationParameters alloc] initWithSourceFrame:cur_frame previousFrame:prev_frame
+															  interpolationPhase:phases destinationFrames:dst_frames]
+			: nil;
 		if (!params) {
-			CVPixelBufferRelease(out_pb);
+			for (CVPixelBufferRef pb : outs)
+				CVPixelBufferRelease(pb);
 			return false;
 		}
 		AVFrame *props = av_frame_alloc();
@@ -229,15 +252,19 @@ bool VTFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, Callbac
 		[(VTFrameProcessor *)impl->processor processWithParameters:params
 			completionHandler:^(id<VTFrameProcessorParameters>, NSError *err) {
 				in_flight->fetch_sub(1);
-				AVFrame *mid = nullptr;
+				std::vector<AVFrame *> frames;
 				if (err)
 					NSLog(@"VTFrameInterpolator: interpolation failed: %@", err);
-				else if (props)
-					mid = wrap_nv12(CVPixelBufferRetain(out_pb), props);
-				CVPixelBufferRelease(out_pb);
+				for (CVPixelBufferRef pb : outs) {
+					if (!err && props) {
+						if (AVFrame *f = wrap_nv12(CVPixelBufferRetain(pb), props))
+							frames.push_back(f);
+					}
+					CVPixelBufferRelease(pb);
+				}
 				AVFrame *p = props;
 				av_frame_free(&p);
-				(*callback)(mid);
+				(*callback)(std::move(frames));
 			}];
 		return true;
 	}

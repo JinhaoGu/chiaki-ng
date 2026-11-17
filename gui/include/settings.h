@@ -3,6 +3,7 @@
 #ifndef CHIAKI_SETTINGS_H
 #define CHIAKI_SETTINGS_H
 
+#include <algorithm>
 #include <chiaki/session.h>
 
 #include "host.h"
@@ -368,6 +369,9 @@ class Settings : public QObject
 		// 0 = VideoToolbox, 1 = MetalFX
 		int GetFrameInterpolationEngine() const { return settings.value("settings/frame_interpolation_engine", 0).toInt(); }
 		void SetFrameInterpolationEngine(int engine) { settings.setValue("settings/frame_interpolation_engine", engine); }
+		// Frame-rate multiplier: 2, 3 or 4
+		int GetFrameInterpolationMultiplier() const { return std::clamp(settings.value("settings/frame_interpolation_multiplier", 2).toInt(), 2, 4); }
+		void SetFrameInterpolationMultiplier(int m) { settings.setValue("settings/frame_interpolation_multiplier", std::clamp(m, 2, 4)); }
 		bool GetVulkanDeferredSwap() const { return settings.value("settings/vulkan_deferred_swap", false).toBool(); }
 		void SetVulkanDeferredSwap(bool enabled) { settings.setValue("settings/vulkan_deferred_swap", enabled); }
 

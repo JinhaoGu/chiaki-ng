@@ -933,7 +933,7 @@ DialogView {
                             : Math.min(1 + Chiaki.settings.frameInterpolationEngine, model.length - 1)
                         KeyNavigation.priority: KeyNavigation.BeforeItem
                         KeyNavigation.up: metalFxCheck
-                        KeyNavigation.down: windowTypeCombo
+                        KeyNavigation.down: frameInterpolationMultiplierCombo.visible ? frameInterpolationMultiplierCombo : windowTypeCombo
                         onActivated: (index) => {
                             Chiaki.settings.frameInterpolation = index > 0;
                             if (index > 0)
@@ -946,6 +946,35 @@ DialogView {
                         color: Theme.textTertiary
                         text: qsTr("(Off)")
                         visible: Chiaki.settings.frameInterpolationSupported
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignRight
+                        text: qsTr("Interpolation Multiplier:")
+                        visible: Chiaki.settings.frameInterpolationSupported && Chiaki.settings.frameInterpolation
+                    }
+
+                    C.ComboBox {
+                        id: frameInterpolationMultiplierCombo
+                        Layout.preferredWidth: 400
+                        visible: Chiaki.settings.frameInterpolationSupported && Chiaki.settings.frameInterpolation
+                        // 3x and 4x need a display at least that many times faster than the stream
+                        // (for example a 30 fps stream on a 120 Hz display), and only VideoToolbox makes them.
+                        model: Chiaki.settings.frameInterpolationEngine === 1
+                            ? [qsTr("2x")]
+                            : [qsTr("2x"), qsTr("3x"), qsTr("4x")]
+                        currentIndex: Math.min(Chiaki.settings.frameInterpolationMultiplier - 2, model.length - 1)
+                        KeyNavigation.priority: KeyNavigation.BeforeItem
+                        KeyNavigation.up: frameInterpolationCheck
+                        KeyNavigation.down: windowTypeCombo
+                        onActivated: (index) => Chiaki.settings.frameInterpolationMultiplier = index + 2
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
+                        text: qsTr("(2x; capped by display refresh)")
+                        visible: Chiaki.settings.frameInterpolationSupported && Chiaki.settings.frameInterpolation
                     }
 
                     Label {

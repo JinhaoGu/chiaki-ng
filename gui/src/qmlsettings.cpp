@@ -636,6 +636,17 @@ void QmlSettings::setFrameInterpolationEngine(int engine)
     emit frameInterpolationEngineChanged();
 }
 
+int QmlSettings::frameInterpolationMultiplier() const
+{
+    return settings->GetFrameInterpolationMultiplier();
+}
+
+void QmlSettings::setFrameInterpolationMultiplier(int m)
+{
+    settings->SetFrameInterpolationMultiplier(m);
+    emit frameInterpolationMultiplierChanged();
+}
+
 bool QmlSettings::metalFxInterpolationSupported() const
 {
 #ifdef Q_OS_MACOS

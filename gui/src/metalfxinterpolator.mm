@@ -360,8 +360,9 @@ void MetalFXFrameInterpolator::Reset()
 	impl->reset_history = true;
 }
 
-bool MetalFXFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, Callback done)
+bool MetalFXFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, int multiplier, Callback done)
 {
+	(void)multiplier; // always 2; see MaxMultiplier()
 	if (impl->broken || !src || src->format != AV_PIX_FMT_VIDEOTOOLBOX || !src->data[3])
 		return false;
 	CVPixelBufferRef current = reinterpret_cast<CVPixelBufferRef>(src->data[3]);
@@ -509,7 +510,10 @@ bool MetalFXFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, Ca
 				CVPixelBufferRelease(out_pb);
 				AVFrame *p = props;
 				av_frame_free(&p);
-				(*callback)(mid);
+				std::vector<AVFrame *> frames;
+				if (mid)
+					frames.push_back(mid);
+				(*callback)(std::move(frames));
 			}];
 			[cb commit];
 

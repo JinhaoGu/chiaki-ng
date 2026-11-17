@@ -179,7 +179,7 @@ public:
     void deliverFrame(ChiakiFfmpegFrame frame, int32_t frames_lost, bool use_opengl_renderer);
 #ifdef Q_OS_MACOS
     void flushInterpolationUpTo(quint64 seq, bool use_opengl_renderer);
-    void onFrameInterpolated(quint64 seq, AVFrame *mid, bool use_opengl_renderer);
+    void onFrameInterpolated(quint64 seq, std::vector<AVFrame *> frames, bool use_opengl_renderer);
     void resetFrameInterpolation();
 #endif
     void prepareStartupPresentation(bool present_warmup);
@@ -322,6 +322,8 @@ private:
     int frame_interpolator_engine = -1;
     std::atomic<bool> frame_interpolation{false};
     std::atomic<int> frame_interpolation_engine{0};
+    // Requested multiplier, already capped by the display refresh rate at session start.
+    std::atomic<int> frame_interpolation_multiplier{2};
     // Real frames held back until their interpolated predecessor has been shown, oldest first.
     struct InterpPending {
         quint64 seq;

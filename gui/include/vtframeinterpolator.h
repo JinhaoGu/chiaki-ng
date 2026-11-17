@@ -36,7 +36,8 @@ public:
 	 * `done`, for the first frame, after `discontinuity`, after a size or
 	 * format change, or for unsupported input.
 	 */
-	bool Submit(const AVFrame *src, bool discontinuity, Callback done) override;
+	int MaxMultiplier() const override { return 4; }
+	bool Submit(const AVFrame *src, bool discontinuity, int multiplier, Callback done) override;
 
 	/** Forgets the previous frame, for example when a stream ends. */
 	void Reset() override;

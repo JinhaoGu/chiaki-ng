@@ -568,38 +568,60 @@ void QmlBackend::flushInterpolationUpTo(quint64 seq, bool use_opengl_renderer)
     }
 }
 
-void QmlBackend::onFrameInterpolated(quint64 seq, AVFrame *mid, bool use_opengl_renderer)
+void QmlBackend::onFrameInterpolated(quint64 seq, std::vector<AVFrame *> frames, bool use_opengl_renderer)
 {
     auto it = std::find_if(interp_pending.begin(), interp_pending.end(),
                            [seq](const InterpPending &p) { return p.seq == seq; });
     if (it == interp_pending.end()) {
-        // Too late: the frame was already shown without it.
-        av_frame_free(&mid);
+        // Too late: the frame was already shown without them.
+        for (AVFrame *f : frames)
+            av_frame_free(&f);
         return;
     }
-    // Everything older must be on screen before the interpolated frame.
+    // Everything older must be on screen before the interpolated frames.
     if (it != interp_pending.begin()) {
         flushInterpolationUpTo(seq - 1, use_opengl_renderer);
         it = interp_pending.begin();
     }
-    const double duration = it->frame.duration > 0 ? it->frame.duration : 1.0 / 60.0;
-    if (mid) {
-        if (!interp_logged) {
-            interp_logged = true;
-            qCInfo(chiakiGui) << "Frame interpolation active:" << mid->width << "x" << mid->height;
-        }
-        ChiakiFfmpegFrame mid_frame = {};
-        mid_frame.frame = mid;
-        mid_frame.pts = it->frame.pts - duration / 2.0;
-        mid_frame.duration = duration / 2.0;
-        it->frame.duration = duration / 2.0;
-        deliverFrame(mid_frame, 0, use_opengl_renderer);
-        // Show the real frame half an interval after the interpolated one.
-        QTimer::singleShot(std::max(1, int(std::lround(duration * 500.0))), frame_thread->parent(),
-                           [this, seq, use_opengl_renderer]() { flushInterpolationUpTo(seq, use_opengl_renderer); });
-    } else {
+    if (frames.empty()) {
         flushInterpolationUpTo(seq, use_opengl_renderer);
+        return;
     }
+    if (!interp_logged) {
+        interp_logged = true;
+        qCInfo(chiakiGui) << "Frame interpolation active:" << frames.front()->width << "x" << frames.front()->height
+                          << (frames.size() + 1) << "x";
+    }
+    // Spread the interpolated frames and then the real frame evenly over one source interval:
+    // the first now, the next 1/M later, and so on.
+    const int m = int(frames.size()) + 1;
+    const double duration = it->frame.duration > 0 ? it->frame.duration : 1.0 / 60.0;
+    const double step = duration / m;
+    const double base_pts = it->frame.pts - duration + step;
+    it->frame.duration = step;
+    QObject *frame_context = frame_thread->parent();
+    for (int k = 0; k < int(frames.size()); k++) {
+        ChiakiFfmpegFrame f = {};
+        f.frame = frames[k];
+        f.pts = base_pts + k * step;
+        f.duration = step;
+        if (k == 0) {
+            deliverFrame(f, 0, use_opengl_renderer);
+            continue;
+        }
+        QTimer::singleShot(std::max(1, int(std::lround(step * k * 1000.0))), frame_context,
+                           [this, seq, f, use_opengl_renderer]() mutable {
+            // Drop it if the real frame after it has already been shown.
+            const bool still_pending = std::any_of(interp_pending.begin(), interp_pending.end(),
+                                                   [seq](const InterpPending &p) { return p.seq == seq; });
+            if (still_pending)
+                deliverFrame(f, 0, use_opengl_renderer);
+            else
+                av_frame_free(&f.frame);
+        });
+    }
+    QTimer::singleShot(std::max(1, int(std::lround(step * frames.size() * 1000.0))), frame_context,
+                       [this, seq, use_opengl_renderer]() { flushInterpolationUpTo(seq, use_opengl_renderer); });
 }
 
 void QmlBackend::resetFrameInterpolation()
@@ -1103,9 +1125,16 @@ void QmlBackend::createSession(const StreamSessionConnectInfo &connect_info)
             engine = 0;
         frame_interpolation_engine.store(engine);
         const bool want = settings->GetFrameInterpolation() && settings_qml->frameInterpolationSupported();
-        const bool fast_display = refresh >= 1.6 * connect_info.video_profile.max_fps;
+        const double fps = std::max(1u, connect_info.video_profile.max_fps);
+        // Show at most one frame per display refresh: 60 fps on 120 Hz allows 2x, 30 fps allows 4x.
+        const int display_cap = int(std::floor(refresh * 1.05 / fps));
+        const int multiplier = std::min(settings->GetFrameInterpolationMultiplier(), display_cap);
+        const bool fast_display = multiplier >= 2;
         if (want && !fast_display)
             qCInfo(chiakiGui) << "Frame interpolation off: display refresh" << refresh << "Hz is below twice the stream rate";
+        else if (want && multiplier < settings->GetFrameInterpolationMultiplier())
+            qCInfo(chiakiGui) << "Frame interpolation multiplier capped to" << multiplier << "x by the" << refresh << "Hz display";
+        frame_interpolation_multiplier.store(std::max(2, multiplier));
         frame_interpolation.store(want && fast_display);
         QMetaObject::invokeMethod(frame_thread->parent(), [this]() { resetFrameInterpolation(); });
     }
@@ -1291,10 +1320,12 @@ void QmlBackend::createSession(const StreamSessionConnectInfo &connect_info)
             const bool discontinuity = frames_lost > 0 || frame.recovered;
             const quint64 seq = ++interp_seq;
             QObject *frame_context = frame_thread->parent();
-            const bool submitted = frame_interpolator->Submit(frame.frame, discontinuity,
-                [this, seq, frame_context, use_opengl_renderer](AVFrame *mid) {
-                    QMetaObject::invokeMethod(frame_context, [this, seq, mid, use_opengl_renderer]() {
-                        onFrameInterpolated(seq, mid, use_opengl_renderer);
+            const int multiplier = std::min(frame_interpolation_multiplier.load(std::memory_order_relaxed),
+                                            frame_interpolator->MaxMultiplier());
+            const bool submitted = frame_interpolator->Submit(frame.frame, discontinuity, multiplier,
+                [this, seq, frame_context, use_opengl_renderer](std::vector<AVFrame *> frames) {
+                    QMetaObject::invokeMethod(frame_context, [this, seq, frames, use_opengl_renderer]() {
+                        onFrameInterpolated(seq, frames, use_opengl_renderer);
                     });
                 });
             if (submitted) {

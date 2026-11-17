@@ -26,7 +26,9 @@ public:
 	/** True on macOS 26+ when MetalFX interpolation and VTOpticalFlow are both available. */
 	static bool IsSupported();
 
-	bool Submit(const AVFrame *src, bool discontinuity, Callback done) override;
+	/** MetalFX only makes the frame halfway between two frames. */
+	int MaxMultiplier() const override { return 2; }
+	bool Submit(const AVFrame *src, bool discontinuity, int multiplier, Callback done) override;
 	void Reset() override;
 
 private:
