@@ -142,7 +142,7 @@ if(NOT CHIAKI_ENABLE_FFMPEG_DECODER)
 endif()
 if(APPLE)
 	target_link_libraries(chiaki "-framework AVFoundation" "-framework IOKit"
-		"-framework Metal" "-framework CoreVideo" "-weak_framework MetalFX")
+		"-framework Metal" "-framework CoreVideo" "-framework IOSurface" "-weak_framework MetalFX")
 	# MetalFX code uses Objective-C objects in C++ structs; ARC manages them.
 	set_source_files_properties(src/metalfxupscaler.mm PROPERTIES COMPILE_FLAGS "-fobjc-arc")
 endif()

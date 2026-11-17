@@ -1,6 +1,8 @@
 #include "metalfxupscaler.h"
 
 #import <CoreVideo/CoreVideo.h>
+#import <IOSurface/IOSurfaceRef.h>
+#import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 #import <MetalFX/MetalFX.h>
@@ -98,6 +100,26 @@ static YuvParams make_yuv_params(AVColorSpace space, AVColorRange range, bool te
 		p.scale = simd_make_float3(1.0f / y_rng, 1.0f / c_rng, 1.0f / c_rng) * container;
 	}
 	return p;
+}
+
+// Stored in AVFrame::buf[1] of every output frame. It marks the frame as ours
+// and holds an extra reference to the IOSurface for zero-copy import.
+struct IOSurfaceMarker {
+	uint64_t magic;
+	IOSurfaceRef surface;
+	size_t alloc_size;
+	CFTypeRef command_buffer; // id<MTLCommandBuffer> that writes the surface; retained
+};
+static constexpr uint64_t kIOSurfaceMarkerMagic = 0x4d46585355524631ull; // "MFXSURF1"
+
+static void release_marker(void *, uint8_t *data)
+{
+	auto *m = reinterpret_cast<IOSurfaceMarker *>(data);
+	if (m->surface)
+		CFRelease(m->surface);
+	if (m->command_buffer)
+		CFRelease(m->command_buffer);
+	av_free(m);
 }
 
 static void release_output(void *opaque, uint8_t *)
@@ -245,6 +267,60 @@ MetalFXUpscaler::~MetalFXUpscaler()
 	delete impl;
 }
 
+void MetalFXUpscaler::WaitFrameReady(const AVFrame *frame)
+{
+	if (!FrameIOSurface(frame, nullptr))
+		return;
+	const auto *mk = reinterpret_cast<const IOSurfaceMarker *>(frame->buf[1]->data);
+	if (mk->command_buffer)
+		[(__bridge id<MTLCommandBuffer>)mk->command_buffer waitUntilCompleted];
+}
+
+void *MetalFXUpscaler::FrameIOSurface(const AVFrame *frame, size_t *alloc_size)
+{
+	if (!frame || (frame->format != AV_PIX_FMT_BGRA && frame->format != AV_PIX_FMT_RGBA64LE))
+		return nullptr;
+	const AVBufferRef *b = frame->buf[1];
+	if (!b || b->size != sizeof(IOSurfaceMarker))
+		return nullptr;
+	const auto *mk = reinterpret_cast<const IOSurfaceMarker *>(b->data);
+	if (mk->magic != kIOSurfaceMarkerMagic)
+		return nullptr;
+	if (alloc_size)
+		*alloc_size = mk->alloc_size;
+	return mk->surface;
+}
+
+double MetalFXUpscaler::NativePixelScaleAt(double x, double y)
+{
+	CGDirectDisplayID display = 0;
+	uint32_t count = 0;
+	if (CGGetDisplaysWithPoint(CGPointMake(x, y), 1, &display, &count) != kCGErrorSuccess || count == 0)
+		display = CGMainDisplayID();
+	CGDisplayModeRef current = CGDisplayCopyDisplayMode(display);
+	if (!current)
+		return 1.0;
+	const size_t backing = CGDisplayModeGetPixelWidth(current);
+	CGDisplayModeRelease(current);
+
+	// kDisplayModeNativeFlag from IOKit/graphics/IOGraphicsTypes.h
+	constexpr uint32_t kNativeFlag = 0x02000000;
+	size_t native = 0;
+	NSDictionary *opts = @{(id)kCGDisplayShowDuplicateLowResolutionModes: @YES};
+	CFArrayRef modes = CGDisplayCopyAllDisplayModes(display, (__bridge CFDictionaryRef)opts);
+	if (modes) {
+		for (CFIndex i = 0; i < CFArrayGetCount(modes); i++) {
+			auto mode = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
+			if (CGDisplayModeGetIOFlags(mode) & kNativeFlag)
+				native = std::max(native, CGDisplayModeGetPixelWidth(mode));
+		}
+		CFRelease(modes);
+	}
+	if (!native || !backing || native >= backing)
+		return 1.0;
+	return double(native) / double(backing);
+}
+
 bool MetalFXUpscaler::IsSupported()
 {
 	if (@available(macOS 13.0, *)) {
@@ -343,11 +419,25 @@ AVFrame *MetalFXUpscaler::Process(const AVFrame *src, int target_width, int targ
 				[enc dispatchThreadgroups:grid threadsPerThreadgroup:tg];
 				[enc endEncoding];
 
+				// Do not wait here: this runs on the decoder thread, and blocking it
+				// made the decoder drop frames when packets arrived in bursts. The
+				// GPU inputs stay alive until the command buffer completes, and the
+				// renderer waits via WaitFrameReady() just before it reads the frame.
+				CVPixelBufferRef in_hold = CVPixelBufferRetain(in_pb);
+				CVMetalTextureRef y_hold = y_ref, c_hold = c_ref, o_hold = o_ref;
+				y_ref = c_ref = o_ref = nullptr;
+				[cb addCompletedHandler:^(id<MTLCommandBuffer> done) {
+					if (done.status != MTLCommandBufferStatusCompleted)
+						NSLog(@"MetalFXUpscaler: command buffer failed: %@", done.error);
+					if (o_hold) CFRelease(o_hold);
+					if (y_hold) CFRelease(y_hold);
+					if (c_hold) CFRelease(c_hold);
+					CVPixelBufferRelease(in_hold);
+				}];
 				[cb commit];
-				[cb waitUntilCompleted];
 
-				if (cb.status == MTLCommandBufferStatusCompleted
-					&& CVPixelBufferLockBaseAddress(out_pb, kCVPixelBufferLock_ReadOnly) == kCVReturnSuccess) {
+				bool marked = false;
+				if (CVPixelBufferLockBaseAddress(out_pb, kCVPixelBufferLock_ReadOnly) == kCVReturnSuccess) {
 					const int stride = int(CVPixelBufferGetBytesPerRow(out_pb));
 					out = av_frame_alloc();
 					AVBufferRef *buf = out ? av_buffer_create(
@@ -369,10 +459,28 @@ AVFrame *MetalFXUpscaler::Process(const AVFrame *src, int target_width, int targ
 						out->color_range = AVCOL_RANGE_JPEG;
 						out->chroma_location = AVCHROMA_LOC_UNSPECIFIED;
 						out->crop_top = out->crop_bottom = out->crop_left = out->crop_right = 0;
+
+						CVPixelBufferRef owner = static_cast<CVPixelBufferRef>(av_buffer_get_opaque(buf));
+						if (IOSurfaceRef surf = CVPixelBufferGetIOSurface(owner)) {
+							auto *mk = static_cast<IOSurfaceMarker *>(av_mallocz(sizeof(IOSurfaceMarker)));
+							if (mk) {
+								mk->magic = kIOSurfaceMarkerMagic;
+								mk->surface = (IOSurfaceRef)CFRetain(surf);
+								mk->alloc_size = IOSurfaceGetAllocSize(surf);
+								mk->command_buffer = CFBridgingRetain(cb);
+								out->buf[1] = av_buffer_create(reinterpret_cast<uint8_t *>(mk), sizeof(*mk),
+															   release_marker, nullptr, AV_BUFFER_FLAG_READONLY);
+								if (!out->buf[1])
+									release_marker(nullptr, reinterpret_cast<uint8_t *>(mk));
+								else
+									marked = true;
+							}
+						}
 					}
-				} else if (cb.status != MTLCommandBufferStatusCompleted) {
-					NSLog(@"MetalFXUpscaler: command buffer failed: %@", cb.error);
 				}
+				// Without a marker nobody can wait later, so wait now.
+				if (!marked)
+					[cb waitUntilCompleted];
 			}
 		}
 

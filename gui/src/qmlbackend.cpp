@@ -473,7 +473,8 @@ bool QmlBackend::prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_
         if (!metalfx_upscaler)
             metalfx_upscaler = new MetalFXUpscaler();
         const QSize target = window ? window->presentationPixelSize() : QSize();
-        if (AVFrame *upscaled = metalfx_upscaler->Process(frame.frame, target.width(), target.height())) {
+        AVFrame *upscaled = metalfx_upscaler->Process(frame.frame, target.width(), target.height());
+        if (upscaled) {
             if (!metalfx_logged) {
                 metalfx_logged = true;
                 qCInfo(chiakiGui) << "MetalFX upscaling" << frame.frame->width << "x" << frame.frame->height

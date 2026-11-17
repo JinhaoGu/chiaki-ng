@@ -38,6 +38,28 @@ public:
 	 */
 	AVFrame *Process(const AVFrame *src, int target_width, int target_height);
 
+	/**
+	 * If `frame` came from Process(), returns its backing IOSurfaceRef (borrowed,
+	 * valid while the frame lives) and its allocation size, so a Vulkan renderer
+	 * can import it as a texture instead of uploading the pixels. Else nullptr.
+	 */
+	static void *FrameIOSurface(const AVFrame *frame, size_t *alloc_size);
+
+	/**
+	 * Process() returns before the GPU finishes. Call this before reading the
+	 * pixels or sampling the IOSurface of a frame it returned. No-op for other
+	 * frames. Usually returns at once, because rendering runs a few ms later.
+	 */
+	static void WaitFrameReady(const AVFrame *frame);
+
+	/**
+	 * Ratio of the panel's native pixels to the current backing pixels for the
+	 * display at global point (x, y), in points. A "more space" scaled mode on a
+	 * 3024-pixel panel renders at 3600 pixels and returns 0.84; upscaling past
+	 * the panel only wastes GPU time. Returns 1.0 when unknown.
+	 */
+	static double NativePixelScaleAt(double x, double y);
+
 	/** Largest upscale factor per axis. Larger targets are clamped to this factor. */
 	static constexpr double kMaxScale = 3.0;
 
