@@ -9,6 +9,7 @@
 #include "chiaki/remote/holepunch.h"
 #ifdef Q_OS_MACOS
 #include "macWakeSleep.h"
+#include "metalfxupscaler.h"
 #elif defined(Q_OS_WINDOWS)
 #include "windowsWakeSleep.h"
 #endif
@@ -465,6 +466,26 @@ bool QmlBackend::prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_
     if (direct_render)
         return frame_has_planes(frame.frame);
 
+#ifdef Q_OS_MACOS
+    // MetalFX upscaling replaces the GPU->CPU transfer below: the upscaled
+    // frame already lives in CPU-visible IOSurface memory.
+    if (metalfx_upscaling.load(std::memory_order_relaxed) && frame.frame->format == AV_PIX_FMT_VIDEOTOOLBOX) {
+        if (!metalfx_upscaler)
+            metalfx_upscaler = new MetalFXUpscaler();
+        const QSize target = window ? window->presentationPixelSize() : QSize();
+        if (AVFrame *upscaled = metalfx_upscaler->Process(frame.frame, target.width(), target.height())) {
+            if (!metalfx_logged) {
+                metalfx_logged = true;
+                qCInfo(chiakiGui) << "MetalFX upscaling" << frame.frame->width << "x" << frame.frame->height
+                                  << "->" << upscaled->width << "x" << upscaled->height;
+            }
+            av_frame_free(&frame.frame);
+            frame.frame = upscaled;
+            return frame_has_planes(frame.frame);
+        }
+    }
+#endif
+
     const int format = frame.frame->format;
     {
         QMutexLocker locker(&hw_transfer_state_mutex);
@@ -514,6 +535,10 @@ QmlBackend::~QmlBackend()
     frame_thread->quit();
     frame_thread->wait();
     frame_thread->parent()->deleteLater();
+#ifdef Q_OS_MACOS
+    delete metalfx_upscaler;
+    metalfx_upscaler = nullptr;
+#endif
     psn_connection_thread.quit();
     psn_connection_thread.wait();
 }
@@ -972,6 +997,10 @@ void QmlBackend::createSession(const StreamSessionConnectInfo &connect_info)
     session_info = connect_info;
     window->setStreamMaxFPS(connect_info.video_profile.max_fps);
     disable_zero_copy = !settings->GetUseZeroCopy();
+#ifdef Q_OS_MACOS
+    metalfx_upscaling.store(settings->GetMetalFXUpscaling() && settings_qml->metalFxSupported());
+    metalfx_logged = false;
+#endif
     {
         QMutexLocker locker(&hw_transfer_state_mutex);
         logged_hw_transfer_formats.clear();

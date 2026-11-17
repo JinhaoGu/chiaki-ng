@@ -6097,6 +6097,8 @@ void QmlMainWindow::resizeSwapchain()
         return;
 
     const QSize window_size(width() * devicePixelRatio(), height() * devicePixelRatio());
+    presentation_pixel_w.store(window_size.width(), std::memory_order_relaxed);
+    presentation_pixel_h.store(window_size.height(), std::memory_order_relaxed);
     const bool swapchain_ready = quick_tex &&
                                  (render_backend != RenderBackend::OpenGL || quick_fbo) &&
                                  (render_backend != RenderBackend::Vulkan || quick_vk_image);

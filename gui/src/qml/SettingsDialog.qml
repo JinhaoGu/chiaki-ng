@@ -782,7 +782,7 @@ DialogView {
                             KeyNavigation.priority: KeyNavigation.BeforeItem
                             KeyNavigation.up: zeroCopyCheck
                             KeyNavigation.left: hwDecoderCombo
-                            KeyNavigation.down: windowTypeCombo
+                            KeyNavigation.down: metalFxCheck.visible ? metalFxCheck : windowTypeCombo
                             checked: Chiaki.settings.useZeroCopy
                             onToggled: Chiaki.settings.useZeroCopy = checked
                         }
@@ -791,6 +791,29 @@ DialogView {
                     Label {
                         Layout.alignment: Qt.AlignRight
                         text: qsTr("(Auto)")
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignRight
+                        text: qsTr("MetalFX Upscaling:")
+                        visible: Chiaki.settings.metalFxSupported
+                    }
+
+                    C.CheckBox {
+                        id: metalFxCheck
+                        visible: Chiaki.settings.metalFxSupported
+                        text: qsTr("Upscale to window size (VideoToolbox decoder)")
+                        KeyNavigation.priority: KeyNavigation.BeforeItem
+                        KeyNavigation.up: zeroCopyCheck
+                        KeyNavigation.down: windowTypeCombo
+                        checked: Chiaki.settings.metalFxUpscaling
+                        onToggled: Chiaki.settings.metalFxUpscaling = checked
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignRight
+                        text: qsTr("(Off)")
+                        visible: Chiaki.settings.metalFxSupported
                     }
 
                     Label {

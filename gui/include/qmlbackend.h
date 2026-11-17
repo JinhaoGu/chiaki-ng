@@ -15,6 +15,7 @@
 #include <QFutureWatcher>
 #include <QFuture>
 #include <QAtomicInteger>
+#include <atomic>
 #ifdef CHIAKI_HAVE_WEBENGINE
 #include <QQuickWebEngineProfile>
 #include <QWebEngineUrlRequestInterceptor>
@@ -23,6 +24,7 @@
 class SystemdInhibit;
 #ifdef Q_OS_MACOS
     class MacWakeSleep;
+    class MetalFXUpscaler;
 #elif defined(Q_OS_WINDOWS)
     class WindowsWakeSleep;
 #endif
@@ -303,6 +305,10 @@ private:
     SystemdInhibit *sleep_inhibit = {};
 #ifdef Q_OS_MACOS
     MacWakeSleep *mac_wake_sleep = {};
+    // Created lazily and used only on the frame thread; deleted after it stops.
+    MetalFXUpscaler *metalfx_upscaler = {};
+    std::atomic<bool> metalfx_upscaling{false};
+    bool metalfx_logged = false;
 #elif defined(Q_OS_WINDOWS)
     WindowsWakeSleep *windows_wake_sleep = {};
 #endif

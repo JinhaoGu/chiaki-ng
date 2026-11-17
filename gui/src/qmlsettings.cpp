@@ -1,4 +1,7 @@
 #include "qmlsettings.h"
+#ifdef Q_OS_MACOS
+#include "metalfxupscaler.h"
+#endif
 #include "sessionlog.h"
 
 #include <QSet>
@@ -586,6 +589,27 @@ void QmlSettings::setUseZeroCopy(bool enabled)
 {
     settings->SetUseZeroCopy(enabled);
     emit useZeroCopyChanged();
+}
+
+bool QmlSettings::metalFxUpscaling() const
+{
+    return settings->GetMetalFXUpscaling();
+}
+
+void QmlSettings::setMetalFxUpscaling(bool enabled)
+{
+    settings->SetMetalFXUpscaling(enabled);
+    emit metalFxUpscalingChanged();
+}
+
+bool QmlSettings::metalFxSupported() const
+{
+#ifdef Q_OS_MACOS
+    static const bool supported = MetalFXUpscaler::IsSupported();
+    return supported;
+#else
+    return false;
+#endif
 }
 
 bool QmlSettings::vulkanDeferredSwap() const
