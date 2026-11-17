@@ -10,6 +10,7 @@
 #ifdef Q_OS_MACOS
 #include "macWakeSleep.h"
 #include "metalfxupscaler.h"
+#include "vtframeinterpolator.h"
 #elif defined(Q_OS_WINDOWS)
 #include "windowsWakeSleep.h"
 #endif
@@ -33,6 +34,7 @@
 #include <QDesktopServices>
 #include <QtConcurrent>
 #include <QTimer>
+#include <QScreen>
 
 extern "C" {
 #include <chiaki/time.h>
@@ -469,7 +471,10 @@ bool QmlBackend::prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_
 #ifdef Q_OS_MACOS
     // MetalFX upscaling replaces the GPU->CPU transfer below: the upscaled
     // frame already lives in CPU-visible IOSurface memory.
-    if (metalfx_upscaling.load(std::memory_order_relaxed) && frame.frame->format == AV_PIX_FMT_VIDEOTOOLBOX) {
+    // Upscaling is skipped while interpolating: interpolated frames are not upscaled, and
+    // alternating sharp and soft frames would flicker.
+    if (metalfx_upscaling.load(std::memory_order_relaxed) && !frame_interpolation.load(std::memory_order_relaxed)
+        && frame.frame->format == AV_PIX_FMT_VIDEOTOOLBOX) {
         if (!metalfx_upscaler)
             metalfx_upscaler = new MetalFXUpscaler();
         const QSize target = window ? window->presentationPixelSize() : QSize();
@@ -526,6 +531,88 @@ bool QmlBackend::prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_
     return frame_has_planes(frame.frame);
 }
 
+void QmlBackend::deliverFrame(ChiakiFfmpegFrame frame, int32_t frames_lost, bool use_opengl_renderer)
+{
+    const qint64 prepare_begin_us = static_cast<qint64>(chiaki_time_now_monotonic_us());
+    if (!prepareFrameForPresentation(frame, use_opengl_renderer))
+    {
+        av_frame_free(&frame.frame);
+        return;
+    }
+    const qint64 prepare_end_us = static_cast<qint64>(chiaki_time_now_monotonic_us());
+    if (prepare_end_us >= prepare_begin_us && prepare_end_us - prepare_begin_us >= 5000) {
+        CHIAKI_NOISY_DEBUG().nospace()
+            << "[decode] prepare_frame_us=" << (prepare_end_us - prepare_begin_us)
+            << " pts=" << frame.pts;
+    }
+
+    if (pending_recovered_frame.fetchAndStoreRelaxed(0) != 0) {
+        frame.recovered = true;
+    }
+
+    const qint64 delivery_us = static_cast<qint64>(chiaki_time_now_monotonic_us());
+    QmlMainWindow *target_window = window;
+    QMetaObject::invokeMethod(target_window, [target_window, frame, frames_lost, delivery_us]() mutable {
+        target_window->presentFrame(frame, frames_lost, delivery_us);
+    });
+}
+
+#ifdef Q_OS_MACOS
+void QmlBackend::flushInterpolationUpTo(quint64 seq, bool use_opengl_renderer)
+{
+    while (!interp_pending.empty() && interp_pending.front().seq <= seq) {
+        InterpPending p = interp_pending.front();
+        interp_pending.pop_front();
+        deliverFrame(p.frame, p.frames_lost, use_opengl_renderer);
+    }
+}
+
+void QmlBackend::onFrameInterpolated(quint64 seq, AVFrame *mid, bool use_opengl_renderer)
+{
+    auto it = std::find_if(interp_pending.begin(), interp_pending.end(),
+                           [seq](const InterpPending &p) { return p.seq == seq; });
+    if (it == interp_pending.end()) {
+        // Too late: the frame was already shown without it.
+        av_frame_free(&mid);
+        return;
+    }
+    // Everything older must be on screen before the interpolated frame.
+    if (it != interp_pending.begin()) {
+        flushInterpolationUpTo(seq - 1, use_opengl_renderer);
+        it = interp_pending.begin();
+    }
+    const double duration = it->frame.duration > 0 ? it->frame.duration : 1.0 / 60.0;
+    if (mid) {
+        if (!interp_logged) {
+            interp_logged = true;
+            qCInfo(chiakiGui) << "Frame interpolation active:" << mid->width << "x" << mid->height;
+        }
+        ChiakiFfmpegFrame mid_frame = {};
+        mid_frame.frame = mid;
+        mid_frame.pts = it->frame.pts - duration / 2.0;
+        mid_frame.duration = duration / 2.0;
+        it->frame.duration = duration / 2.0;
+        deliverFrame(mid_frame, 0, use_opengl_renderer);
+        // Show the real frame half an interval after the interpolated one.
+        QTimer::singleShot(std::max(1, int(std::lround(duration * 500.0))), frame_thread->parent(),
+                           [this, seq, use_opengl_renderer]() { flushInterpolationUpTo(seq, use_opengl_renderer); });
+    } else {
+        flushInterpolationUpTo(seq, use_opengl_renderer);
+    }
+}
+
+void QmlBackend::resetFrameInterpolation()
+{
+    for (auto &p : interp_pending)
+        av_frame_free(&p.frame.frame);
+    interp_pending.clear();
+    ++interp_seq;
+    interp_logged = false;
+    if (vt_interpolator)
+        vt_interpolator->Reset();
+}
+#endif
+
 QmlBackend::~QmlBackend()
 {
     teardownSession();
@@ -539,6 +626,11 @@ QmlBackend::~QmlBackend()
 #ifdef Q_OS_MACOS
     delete metalfx_upscaler;
     metalfx_upscaler = nullptr;
+    for (auto &p : interp_pending)
+        av_frame_free(&p.frame.frame);
+    interp_pending.clear();
+    delete vt_interpolator;
+    vt_interpolator = nullptr;
 #endif
     psn_connection_thread.quit();
     psn_connection_thread.wait();
@@ -1001,6 +1093,17 @@ void QmlBackend::createSession(const StreamSessionConnectInfo &connect_info)
 #ifdef Q_OS_MACOS
     metalfx_upscaling.store(settings->GetMetalFXUpscaling() && settings_qml->metalFxSupported());
     metalfx_logged = false;
+    {
+        // Interpolation only helps when the display can show twice the stream frame rate.
+        const QScreen *screen = window && window->screen() ? window->screen() : QGuiApplication::primaryScreen();
+        const qreal refresh = screen ? screen->refreshRate() : 60.0;
+        const bool want = settings->GetFrameInterpolation() && settings_qml->frameInterpolationSupported();
+        const bool fast_display = refresh >= 1.6 * connect_info.video_profile.max_fps;
+        if (want && !fast_display)
+            qCInfo(chiakiGui) << "Frame interpolation off: display refresh" << refresh << "Hz is below twice the stream rate";
+        frame_interpolation.store(want && fast_display);
+        QMetaObject::invokeMethod(frame_thread->parent(), [this]() { resetFrameInterpolation(); });
+    }
 #endif
     {
         QMutexLocker locker(&hw_transfer_state_mutex);
@@ -1165,28 +1268,38 @@ void QmlBackend::createSession(const StreamSessionConnectInfo &connect_info)
         if (frame.recovered)
             pending_recovered_frame.storeRelaxed(1);
 
-        const qint64 prepare_begin_us = static_cast<qint64>(chiaki_time_now_monotonic_us());
-        if (!prepareFrameForPresentation(frame, use_opengl_renderer))
-        {
-            av_frame_free(&frame.frame);
-            return;
+#ifdef Q_OS_MACOS
+        if (frame_interpolation.load(std::memory_order_relaxed) && frame.frame->format == AV_PIX_FMT_VIDEOTOOLBOX) {
+            // Do not let frames pile up: keep at most one older frame waiting.
+            if (interp_pending.size() >= 2)
+                flushInterpolationUpTo(interp_pending.front().seq, use_opengl_renderer);
+            if (!vt_interpolator)
+                vt_interpolator = new VTFrameInterpolator();
+            const bool discontinuity = frames_lost > 0 || frame.recovered;
+            const quint64 seq = ++interp_seq;
+            QObject *frame_context = frame_thread->parent();
+            const bool submitted = vt_interpolator->Submit(frame.frame, discontinuity,
+                [this, seq, frame_context, use_opengl_renderer](AVFrame *mid) {
+                    QMetaObject::invokeMethod(frame_context, [this, seq, mid, use_opengl_renderer]() {
+                        onFrameInterpolated(seq, mid, use_opengl_renderer);
+                    });
+                });
+            if (submitted) {
+                // Hold this frame until the interpolated frame before it has been shown.
+                interp_pending.push_back({seq, frame, frames_lost});
+                // Safety net: never hold a frame longer than two frame intervals.
+                const int timeout_ms = std::max(1, int(std::lround((frame.duration > 0 ? frame.duration : 1.0 / 60.0) * 2000.0)));
+                QTimer::singleShot(timeout_ms, frame_context, [this, seq, use_opengl_renderer]() {
+                    flushInterpolationUpTo(seq, use_opengl_renderer);
+                });
+                return;
+            }
+            // Not interpolated (first frame, discontinuity): show older held frames first.
+            if (!interp_pending.empty())
+                flushInterpolationUpTo(interp_pending.back().seq, use_opengl_renderer);
         }
-        const qint64 prepare_end_us = static_cast<qint64>(chiaki_time_now_monotonic_us());
-        if (prepare_end_us >= prepare_begin_us && prepare_end_us - prepare_begin_us >= 5000) {
-            CHIAKI_NOISY_DEBUG().nospace()
-                << "[decode] prepare_frame_us=" << (prepare_end_us - prepare_begin_us)
-                << " pts=" << frame.pts;
-        }
-
-        if (pending_recovered_frame.fetchAndStoreRelaxed(0) != 0) {
-            frame.recovered = true;
-        }
-
-        const qint64 delivery_us = static_cast<qint64>(chiaki_time_now_monotonic_us());
-        QmlMainWindow *target_window = window;
-        QMetaObject::invokeMethod(target_window, [target_window, frame, frames_lost, delivery_us]() mutable {
-            target_window->presentFrame(frame, frames_lost, delivery_us);
-        });
+#endif
+        deliverFrame(frame, frames_lost, use_opengl_renderer);
     });
 
     StreamSession *session_for_connections = session;

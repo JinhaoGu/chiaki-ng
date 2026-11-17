@@ -363,6 +363,8 @@ class Settings : public QObject
 		void SetUseZeroCopy(bool enabled) { settings.setValue("settings/use_zero_copy", enabled); }
 		bool GetMetalFXUpscaling() const { return settings.value("settings/metalfx_upscaling", false).toBool(); }
 		void SetMetalFXUpscaling(bool enabled) { settings.setValue("settings/metalfx_upscaling", enabled); }
+		bool GetFrameInterpolation() const { return settings.value("settings/frame_interpolation", false).toBool(); }
+		void SetFrameInterpolation(bool enabled) { settings.setValue("settings/frame_interpolation", enabled); }
 		bool GetVulkanDeferredSwap() const { return settings.value("settings/vulkan_deferred_swap", false).toBool(); }
 		void SetVulkanDeferredSwap(bool enabled) { settings.setValue("settings/vulkan_deferred_swap", enabled); }
 

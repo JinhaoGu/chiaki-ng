@@ -902,7 +902,7 @@ DialogView {
                         text: qsTr("Upscale to window size (VideoToolbox decoder)")
                         KeyNavigation.priority: KeyNavigation.BeforeItem
                         KeyNavigation.up: zeroCopyCheck
-                        KeyNavigation.down: windowTypeCombo
+                        KeyNavigation.down: frameInterpolationCheck.visible ? frameInterpolationCheck : windowTypeCombo
                         checked: Chiaki.settings.metalFxUpscaling
                         onToggled: Chiaki.settings.metalFxUpscaling = checked
                     }
@@ -912,6 +912,30 @@ DialogView {
                         color: Theme.textTertiary
                         text: qsTr("(Off)")
                         visible: Chiaki.settings.metalFxSupported
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignRight
+                        text: qsTr("Frame Interpolation:")
+                        visible: Chiaki.settings.frameInterpolationSupported
+                    }
+
+                    C.CheckBox {
+                        id: frameInterpolationCheck
+                        visible: Chiaki.settings.frameInterpolationSupported
+                        text: qsTr("Double the frame rate on 120 Hz displays (adds about one frame of latency)")
+                        KeyNavigation.priority: KeyNavigation.BeforeItem
+                        KeyNavigation.up: metalFxCheck
+                        KeyNavigation.down: windowTypeCombo
+                        checked: Chiaki.settings.frameInterpolation
+                        onToggled: Chiaki.settings.frameInterpolation = checked
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignRight
+                        color: Theme.textTertiary
+                        text: qsTr("(Off)")
+                        visible: Chiaki.settings.frameInterpolationSupported
                     }
 
                     Label {

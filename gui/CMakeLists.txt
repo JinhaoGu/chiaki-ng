@@ -82,6 +82,8 @@ if(APPLE)
 		src/macWakeSleep.cpp
 		include/metalfxupscaler.h
 		src/metalfxupscaler.mm
+		include/vtframeinterpolator.h
+		src/vtframeinterpolator.mm
 	)
 elseif(WIN32)
 	list(APPEND SOURCE_FILES
@@ -142,9 +144,10 @@ if(NOT CHIAKI_ENABLE_FFMPEG_DECODER)
 endif()
 if(APPLE)
 	target_link_libraries(chiaki "-framework AVFoundation" "-framework IOKit"
-		"-framework Metal" "-framework CoreVideo" "-framework IOSurface" "-weak_framework MetalFX")
+		"-framework Metal" "-framework CoreVideo" "-framework IOSurface" "-framework CoreMedia"
+		"-weak_framework MetalFX" "-weak_framework VideoToolbox")
 	# MetalFX code uses Objective-C objects in C++ structs; ARC manages them.
-	set_source_files_properties(src/metalfxupscaler.mm PROPERTIES COMPILE_FLAGS "-fobjc-arc")
+	set_source_files_properties(src/metalfxupscaler.mm src/vtframeinterpolator.mm PROPERTIES COMPILE_FLAGS "-fobjc-arc")
 endif()
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fanalyzer")

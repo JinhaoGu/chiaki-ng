@@ -16,6 +16,7 @@
 #include <QFuture>
 #include <QAtomicInteger>
 #include <atomic>
+#include <deque>
 #ifdef CHIAKI_HAVE_WEBENGINE
 #include <QQuickWebEngineProfile>
 #include <QWebEngineUrlRequestInterceptor>
@@ -25,6 +26,7 @@ class SystemdInhibit;
 #ifdef Q_OS_MACOS
     class MacWakeSleep;
     class MetalFXUpscaler;
+    class VTFrameInterpolator;
 #elif defined(Q_OS_WINDOWS)
     class WindowsWakeSleep;
 #endif
@@ -174,6 +176,12 @@ public:
 
     void profileChanged();
     bool prepareFrameForPresentation(ChiakiFfmpegFrame &frame, bool use_opengl_renderer);
+    void deliverFrame(ChiakiFfmpegFrame frame, int32_t frames_lost, bool use_opengl_renderer);
+#ifdef Q_OS_MACOS
+    void flushInterpolationUpTo(quint64 seq, bool use_opengl_renderer);
+    void onFrameInterpolated(quint64 seq, AVFrame *mid, bool use_opengl_renderer);
+    void resetFrameInterpolation();
+#endif
     void prepareStartupPresentation(bool present_warmup);
     void applyStartupWindowSizing();
 
@@ -309,6 +317,18 @@ private:
     MetalFXUpscaler *metalfx_upscaler = {};
     std::atomic<bool> metalfx_upscaling{false};
     bool metalfx_logged = false;
+    // Frame interpolation state; used only on the frame thread.
+    VTFrameInterpolator *vt_interpolator = {};
+    std::atomic<bool> frame_interpolation{false};
+    // Real frames held back until their interpolated predecessor has been shown, oldest first.
+    struct InterpPending {
+        quint64 seq;
+        ChiakiFfmpegFrame frame;
+        int32_t frames_lost;
+    };
+    std::deque<InterpPending> interp_pending;
+    quint64 interp_seq = 0;
+    bool interp_logged = false;
 #elif defined(Q_OS_WINDOWS)
     WindowsWakeSleep *windows_wake_sleep = {};
 #endif

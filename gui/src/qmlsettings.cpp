@@ -1,6 +1,7 @@
 #include "qmlsettings.h"
 #ifdef Q_OS_MACOS
 #include "metalfxupscaler.h"
+#include "vtframeinterpolator.h"
 #endif
 #include "sessionlog.h"
 
@@ -600,6 +601,27 @@ void QmlSettings::setMetalFxUpscaling(bool enabled)
 {
     settings->SetMetalFXUpscaling(enabled);
     emit metalFxUpscalingChanged();
+}
+
+bool QmlSettings::frameInterpolation() const
+{
+    return settings->GetFrameInterpolation();
+}
+
+void QmlSettings::setFrameInterpolation(bool enabled)
+{
+    settings->SetFrameInterpolation(enabled);
+    emit frameInterpolationChanged();
+}
+
+bool QmlSettings::frameInterpolationSupported() const
+{
+#ifdef Q_OS_MACOS
+    static const bool supported = VTFrameInterpolator::IsSupported();
+    return supported;
+#else
+    return false;
+#endif
 }
 
 bool QmlSettings::metalFxSupported() const
