@@ -191,7 +191,7 @@ struct MetalFXFrameInterpolator::Impl
 	int64_t sequence = 0;
 	bool broken = false;
 	// Command buffers submitted but not finished. New work is refused while one is still
-	// running, so a busy GPU drops interpolation instead of queuing work without bound
+	// running (at most two in flight), so a busy GPU drops interpolation instead of queuing work without bound
 	// and starving the renderer.
 	std::shared_ptr<std::atomic<int>> in_flight = std::make_shared<std::atomic<int>>(0);
 
@@ -378,8 +378,8 @@ bool MetalFXFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, Ca
 	}
 	if (discontinuity)
 		Reset();
-	if (impl->in_flight->load() > 0) {
-		// GPU still busy with the previous frame: skip, and restart history next time.
+	if (impl->in_flight->load() >= 2) {
+		// GPU still busy with two earlier frames: skip, and restart history next time.
 		Reset();
 		return false;
 	}

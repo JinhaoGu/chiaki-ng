@@ -178,9 +178,9 @@ bool VTFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, Callbac
 		av_frame_copy_props(impl->previous_props, src);
 	const int64_t seq = ++impl->sequence;
 
-	// Refuse new work while the previous interpolation is still running, so a busy
+	// Refuse new work while two interpolations are still running, so a busy
 	// GPU drops interpolation instead of queuing work and starving the renderer.
-	if (impl->in_flight->load() > 0) {
+	if (impl->in_flight->load() >= 2) {
 		if (previous)
 			CVPixelBufferRelease(previous);
 		av_frame_free(&previous_props);
