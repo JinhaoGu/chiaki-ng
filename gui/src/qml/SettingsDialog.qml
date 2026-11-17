@@ -920,61 +920,51 @@ DialogView {
                         visible: Chiaki.settings.frameInterpolationSupported
                     }
 
-                    // Off / VideoToolbox / MetalFX. Doubles the frame rate on 120 Hz displays and adds
-                    // about one frame of latency.
+                    // One list for engine and multiplier. 3x/4x need a display that many times faster
+                    // than the stream (for example 30 fps on 120 Hz); the app caps the multiplier to
+                    // the display at stream start. MetalFX makes only the middle frame, so it is 2x only.
                     C.ComboBox {
                         id: frameInterpolationCheck
                         Layout.preferredWidth: 400
                         visible: Chiaki.settings.frameInterpolationSupported
-                        model: Chiaki.settings.metalFxInterpolationSupported
-                            ? [qsTr("Off"), qsTr("VideoToolbox (120 fps, +1 frame latency)"), qsTr("MetalFX (120 fps, +1 frame latency)")]
-                            : [qsTr("Off"), qsTr("VideoToolbox (120 fps, +1 frame latency)")]
-                        currentIndex: !Chiaki.settings.frameInterpolation ? 0
-                            : Math.min(1 + Chiaki.settings.frameInterpolationEngine, model.length - 1)
+                        readonly property var options: {
+                            let o = [{ text: qsTr("Off"), on: false, engine: 0, mult: 2 },
+                                     { text: qsTr("VideoToolbox 2x"), on: true, engine: 0, mult: 2 },
+                                     { text: qsTr("VideoToolbox 3x"), on: true, engine: 0, mult: 3 },
+                                     { text: qsTr("VideoToolbox 4x"), on: true, engine: 0, mult: 4 }];
+                            if (Chiaki.settings.metalFxInterpolationSupported)
+                                o.push({ text: qsTr("MetalFX 2x"), on: true, engine: 1, mult: 2 });
+                            return o;
+                        }
+                        model: options.map(o => o.text)
+                        currentIndex: {
+                            if (!Chiaki.settings.frameInterpolation)
+                                return 0;
+                            for (let i = 1; i < options.length; i++) {
+                                if (options[i].engine === Chiaki.settings.frameInterpolationEngine
+                                        && (options[i].engine === 1 || options[i].mult === Chiaki.settings.frameInterpolationMultiplier))
+                                    return i;
+                            }
+                            return 1;
+                        }
                         KeyNavigation.priority: KeyNavigation.BeforeItem
                         KeyNavigation.up: metalFxCheck
-                        KeyNavigation.down: frameInterpolationMultiplierCombo.visible ? frameInterpolationMultiplierCombo : windowTypeCombo
+                        KeyNavigation.down: windowTypeCombo
                         onActivated: (index) => {
-                            Chiaki.settings.frameInterpolation = index > 0;
-                            if (index > 0)
-                                Chiaki.settings.frameInterpolationEngine = index - 1;
+                            const o = options[index];
+                            Chiaki.settings.frameInterpolation = o.on;
+                            if (o.on) {
+                                Chiaki.settings.frameInterpolationEngine = o.engine;
+                                Chiaki.settings.frameInterpolationMultiplier = o.mult;
+                            }
                         }
                     }
 
                     Label {
                         Layout.alignment: Qt.AlignRight
                         color: Theme.textTertiary
-                        text: qsTr("(Off)")
+                        text: qsTr("(Off; +1 frame latency)")
                         visible: Chiaki.settings.frameInterpolationSupported
-                    }
-
-                    Label {
-                        Layout.alignment: Qt.AlignRight
-                        text: qsTr("Interpolation Multiplier:")
-                        visible: Chiaki.settings.frameInterpolationSupported && Chiaki.settings.frameInterpolation
-                    }
-
-                    C.ComboBox {
-                        id: frameInterpolationMultiplierCombo
-                        Layout.preferredWidth: 400
-                        visible: Chiaki.settings.frameInterpolationSupported && Chiaki.settings.frameInterpolation
-                        // 3x and 4x need a display at least that many times faster than the stream
-                        // (for example a 30 fps stream on a 120 Hz display), and only VideoToolbox makes them.
-                        model: Chiaki.settings.frameInterpolationEngine === 1
-                            ? [qsTr("2x")]
-                            : [qsTr("2x"), qsTr("3x"), qsTr("4x")]
-                        currentIndex: Math.min(Chiaki.settings.frameInterpolationMultiplier - 2, model.length - 1)
-                        KeyNavigation.priority: KeyNavigation.BeforeItem
-                        KeyNavigation.up: frameInterpolationCheck
-                        KeyNavigation.down: windowTypeCombo
-                        onActivated: (index) => Chiaki.settings.frameInterpolationMultiplier = index + 2
-                    }
-
-                    Label {
-                        Layout.alignment: Qt.AlignRight
-                        color: Theme.textTertiary
-                        text: qsTr("(2x; capped by display refresh)")
-                        visible: Chiaki.settings.frameInterpolationSupported && Chiaki.settings.frameInterpolation
                     }
 
                     Label {
@@ -3594,5 +3584,6 @@ DialogView {
             }
         }
     }
+
 
 }
