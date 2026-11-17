@@ -5,6 +5,9 @@
 #import <Foundation/Foundation.h>
 #import <VideoToolbox/VideoToolbox.h>
 
+#include <atomic>
+#include <memory>
+
 extern "C" {
 #include <libavutil/pixfmt.h>
 }
@@ -62,6 +65,8 @@ struct VTFrameInterpolator::Impl
 	OSType format = 0;
 	int64_t sequence = 0;
 	bool failed = false;
+	// Interpolations started but not finished; see Submit().
+	std::shared_ptr<std::atomic<int>> in_flight = std::make_shared<std::atomic<int>>(0);
 
 	void EndSession()
 	{
@@ -173,6 +178,15 @@ bool VTFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, Callbac
 		av_frame_copy_props(impl->previous_props, src);
 	const int64_t seq = ++impl->sequence;
 
+	// Refuse new work while the previous interpolation is still running, so a busy
+	// GPU drops interpolation instead of queuing work and starving the renderer.
+	if (impl->in_flight->load() > 0) {
+		if (previous)
+			CVPixelBufferRelease(previous);
+		av_frame_free(&previous_props);
+		return false;
+	}
+
 	if (restart || !previous) {
 		if (previous)
 			CVPixelBufferRelease(previous);
@@ -210,8 +224,11 @@ bool VTFrameInterpolator::Submit(const AVFrame *src, bool discontinuity, Callbac
 			props->height = src->height;
 		}
 		auto callback = std::make_shared<Callback>(std::move(done));
+		auto in_flight = impl->in_flight;
+		in_flight->fetch_add(1);
 		[(VTFrameProcessor *)impl->processor processWithParameters:params
 			completionHandler:^(id<VTFrameProcessorParameters>, NSError *err) {
+				in_flight->fetch_sub(1);
 				AVFrame *mid = nullptr;
 				if (err)
 					NSLog(@"VTFrameInterpolator: interpolation failed: %@", err);

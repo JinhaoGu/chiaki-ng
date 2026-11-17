@@ -82,8 +82,11 @@ if(APPLE)
 		src/macWakeSleep.cpp
 		include/metalfxupscaler.h
 		src/metalfxupscaler.mm
+		include/frameinterpolator.h
 		include/vtframeinterpolator.h
 		src/vtframeinterpolator.mm
+		include/metalfxinterpolator.h
+		src/metalfxinterpolator.mm
 	)
 elseif(WIN32)
 	list(APPEND SOURCE_FILES
@@ -147,7 +150,7 @@ if(APPLE)
 		"-framework Metal" "-framework CoreVideo" "-framework IOSurface" "-framework CoreMedia"
 		"-weak_framework MetalFX" "-weak_framework VideoToolbox")
 	# MetalFX code uses Objective-C objects in C++ structs; ARC manages them.
-	set_source_files_properties(src/metalfxupscaler.mm src/vtframeinterpolator.mm PROPERTIES COMPILE_FLAGS "-fobjc-arc")
+	set_source_files_properties(src/metalfxupscaler.mm src/vtframeinterpolator.mm src/metalfxinterpolator.mm PROPERTIES COMPILE_FLAGS "-fobjc-arc")
 endif()
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fanalyzer")

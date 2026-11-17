@@ -920,15 +920,25 @@ DialogView {
                         visible: Chiaki.settings.frameInterpolationSupported
                     }
 
-                    C.CheckBox {
+                    // Off / VideoToolbox / MetalFX. Doubles the frame rate on 120 Hz displays and adds
+                    // about one frame of latency.
+                    C.ComboBox {
                         id: frameInterpolationCheck
+                        Layout.preferredWidth: 400
                         visible: Chiaki.settings.frameInterpolationSupported
-                        text: qsTr("Double the frame rate on 120 Hz displays (adds about one frame of latency)")
+                        model: Chiaki.settings.metalFxInterpolationSupported
+                            ? [qsTr("Off"), qsTr("VideoToolbox (120 fps, +1 frame latency)"), qsTr("MetalFX (120 fps, +1 frame latency)")]
+                            : [qsTr("Off"), qsTr("VideoToolbox (120 fps, +1 frame latency)")]
+                        currentIndex: !Chiaki.settings.frameInterpolation ? 0
+                            : Math.min(1 + Chiaki.settings.frameInterpolationEngine, model.length - 1)
                         KeyNavigation.priority: KeyNavigation.BeforeItem
                         KeyNavigation.up: metalFxCheck
                         KeyNavigation.down: windowTypeCombo
-                        checked: Chiaki.settings.frameInterpolation
-                        onToggled: Chiaki.settings.frameInterpolation = checked
+                        onActivated: (index) => {
+                            Chiaki.settings.frameInterpolation = index > 0;
+                            if (index > 0)
+                                Chiaki.settings.frameInterpolationEngine = index - 1;
+                        }
                     }
 
                     Label {

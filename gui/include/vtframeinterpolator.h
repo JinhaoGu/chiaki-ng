@@ -1,14 +1,6 @@
 #pragma once
 
-#include <functional>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <libavutil/frame.h>
-#ifdef __cplusplus
-}
-#endif
+#include "frameinterpolator.h"
 
 /**
  * Doubles the frame rate of VideoToolbox-decoded video with
@@ -26,13 +18,11 @@ extern "C" {
  * Submit() and Reset() must be called from one thread. The callback runs on a
  * VideoToolbox thread.
  */
-class VTFrameInterpolator
+class VTFrameInterpolator : public FrameInterpolator
 {
 public:
-	using Callback = std::function<void(AVFrame *mid)>;
-
 	VTFrameInterpolator();
-	~VTFrameInterpolator();
+	~VTFrameInterpolator() override;
 	VTFrameInterpolator(const VTFrameInterpolator &) = delete;
 	VTFrameInterpolator &operator=(const VTFrameInterpolator &) = delete;
 
@@ -46,10 +36,10 @@ public:
 	 * `done`, for the first frame, after `discontinuity`, after a size or
 	 * format change, or for unsupported input.
 	 */
-	bool Submit(const AVFrame *src, bool discontinuity, Callback done);
+	bool Submit(const AVFrame *src, bool discontinuity, Callback done) override;
 
 	/** Forgets the previous frame, for example when a stream ends. */
-	void Reset();
+	void Reset() override;
 
 private:
 	struct Impl;

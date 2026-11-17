@@ -26,7 +26,7 @@ class SystemdInhibit;
 #ifdef Q_OS_MACOS
     class MacWakeSleep;
     class MetalFXUpscaler;
-    class VTFrameInterpolator;
+    class FrameInterpolator;
 #elif defined(Q_OS_WINDOWS)
     class WindowsWakeSleep;
 #endif
@@ -318,8 +318,10 @@ private:
     std::atomic<bool> metalfx_upscaling{false};
     bool metalfx_logged = false;
     // Frame interpolation state; used only on the frame thread.
-    VTFrameInterpolator *vt_interpolator = {};
+    FrameInterpolator *frame_interpolator = {};
+    int frame_interpolator_engine = -1;
     std::atomic<bool> frame_interpolation{false};
+    std::atomic<int> frame_interpolation_engine{0};
     // Real frames held back until their interpolated predecessor has been shown, oldest first.
     struct InterpPending {
         quint64 seq;

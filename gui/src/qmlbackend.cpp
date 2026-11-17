@@ -11,6 +11,7 @@
 #include "macWakeSleep.h"
 #include "metalfxupscaler.h"
 #include "vtframeinterpolator.h"
+#include "metalfxinterpolator.h"
 #elif defined(Q_OS_WINDOWS)
 #include "windowsWakeSleep.h"
 #endif
@@ -608,8 +609,8 @@ void QmlBackend::resetFrameInterpolation()
     interp_pending.clear();
     ++interp_seq;
     interp_logged = false;
-    if (vt_interpolator)
-        vt_interpolator->Reset();
+    if (frame_interpolator)
+        frame_interpolator->Reset();
 }
 #endif
 
@@ -629,8 +630,8 @@ QmlBackend::~QmlBackend()
     for (auto &p : interp_pending)
         av_frame_free(&p.frame.frame);
     interp_pending.clear();
-    delete vt_interpolator;
-    vt_interpolator = nullptr;
+    delete frame_interpolator;
+    frame_interpolator = nullptr;
 #endif
     psn_connection_thread.quit();
     psn_connection_thread.wait();
@@ -1097,6 +1098,10 @@ void QmlBackend::createSession(const StreamSessionConnectInfo &connect_info)
         // Interpolation only helps when the display can show twice the stream frame rate.
         const QScreen *screen = window && window->screen() ? window->screen() : QGuiApplication::primaryScreen();
         const qreal refresh = screen ? screen->refreshRate() : 60.0;
+        int engine = settings->GetFrameInterpolationEngine() == 1 ? 1 : 0;
+        if (engine == 1 && !settings_qml->metalFxInterpolationSupported())
+            engine = 0;
+        frame_interpolation_engine.store(engine);
         const bool want = settings->GetFrameInterpolation() && settings_qml->frameInterpolationSupported();
         const bool fast_display = refresh >= 1.6 * connect_info.video_profile.max_fps;
         if (want && !fast_display)
@@ -1273,12 +1278,20 @@ void QmlBackend::createSession(const StreamSessionConnectInfo &connect_info)
             // Do not let frames pile up: keep at most one older frame waiting.
             if (interp_pending.size() >= 2)
                 flushInterpolationUpTo(interp_pending.front().seq, use_opengl_renderer);
-            if (!vt_interpolator)
-                vt_interpolator = new VTFrameInterpolator();
+            const int engine = frame_interpolation_engine.load(std::memory_order_relaxed);
+            if (!frame_interpolator || frame_interpolator_engine != engine) {
+                delete frame_interpolator;
+                if (engine == 1)
+                    frame_interpolator = new MetalFXFrameInterpolator();
+                else
+                    frame_interpolator = new VTFrameInterpolator();
+                frame_interpolator_engine = engine;
+                qCInfo(chiakiGui) << "Frame interpolation engine:" << (engine == 1 ? "MetalFX" : "VideoToolbox");
+            }
             const bool discontinuity = frames_lost > 0 || frame.recovered;
             const quint64 seq = ++interp_seq;
             QObject *frame_context = frame_thread->parent();
-            const bool submitted = vt_interpolator->Submit(frame.frame, discontinuity,
+            const bool submitted = frame_interpolator->Submit(frame.frame, discontinuity,
                 [this, seq, frame_context, use_opengl_renderer](AVFrame *mid) {
                     QMetaObject::invokeMethod(frame_context, [this, seq, mid, use_opengl_renderer]() {
                         onFrameInterpolated(seq, mid, use_opengl_renderer);

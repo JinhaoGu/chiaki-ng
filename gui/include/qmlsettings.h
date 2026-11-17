@@ -58,6 +58,8 @@ class QmlSettings : public QObject
     Q_PROPERTY(bool metalFxSupported READ metalFxSupported CONSTANT)
     Q_PROPERTY(bool frameInterpolation READ frameInterpolation WRITE setFrameInterpolation NOTIFY frameInterpolationChanged)
     Q_PROPERTY(bool frameInterpolationSupported READ frameInterpolationSupported CONSTANT)
+    Q_PROPERTY(int frameInterpolationEngine READ frameInterpolationEngine WRITE setFrameInterpolationEngine NOTIFY frameInterpolationEngineChanged)
+    Q_PROPERTY(bool metalFxInterpolationSupported READ metalFxInterpolationSupported CONSTANT)
     Q_PROPERTY(bool vulkanDeferredSwap READ vulkanDeferredSwap WRITE setVulkanDeferredSwap NOTIFY vulkanDeferredSwapChanged)
     Q_PROPERTY(int windowType READ windowType WRITE setWindowType NOTIFY windowTypeChanged)
     Q_PROPERTY(uint customResolutionWidth READ customResolutionWidth WRITE setCustomResolutionWidth NOTIFY customResolutionWidthChanged)
@@ -305,6 +307,9 @@ public:
     bool frameInterpolation() const;
     void setFrameInterpolation(bool enabled);
     bool frameInterpolationSupported() const;
+    int frameInterpolationEngine() const;
+    void setFrameInterpolationEngine(int engine);
+    bool metalFxInterpolationSupported() const;
     bool vulkanDeferredSwap() const;
     void setVulkanDeferredSwap(bool enabled);
 
@@ -679,6 +684,7 @@ signals:
     void useZeroCopyChanged();
     void metalFxUpscalingChanged();
     void frameInterpolationChanged();
+    void frameInterpolationEngineChanged();
     void windowTypeChanged();
     void customResolutionWidthChanged();
     void customResolutionHeightChanged();

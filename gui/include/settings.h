@@ -365,6 +365,9 @@ class Settings : public QObject
 		void SetMetalFXUpscaling(bool enabled) { settings.setValue("settings/metalfx_upscaling", enabled); }
 		bool GetFrameInterpolation() const { return settings.value("settings/frame_interpolation", false).toBool(); }
 		void SetFrameInterpolation(bool enabled) { settings.setValue("settings/frame_interpolation", enabled); }
+		// 0 = VideoToolbox, 1 = MetalFX
+		int GetFrameInterpolationEngine() const { return settings.value("settings/frame_interpolation_engine", 0).toInt(); }
+		void SetFrameInterpolationEngine(int engine) { settings.setValue("settings/frame_interpolation_engine", engine); }
 		bool GetVulkanDeferredSwap() const { return settings.value("settings/vulkan_deferred_swap", false).toBool(); }
 		void SetVulkanDeferredSwap(bool enabled) { settings.setValue("settings/vulkan_deferred_swap", enabled); }
 
