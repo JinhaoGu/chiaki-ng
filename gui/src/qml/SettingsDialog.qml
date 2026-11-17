@@ -483,13 +483,28 @@ DialogView {
             }
         }
 
-        StackLayout {
+        // Title of the current section, like the macOS System Settings pane title.
+        Label {
+            id: sectionTitle
             anchors {
                 top: parent.top
                 left: sidebar.right
+                topMargin: 18
+                leftMargin: 32
+            }
+            text: bar.itemAt(bar.currentIndex) ? bar.itemAt(bar.currentIndex).text : ""
+            font.pixelSize: Theme.fontTitle + 2
+            font.weight: Font.DemiBold
+            color: Theme.textPrimary
+        }
+
+        StackLayout {
+            anchors {
+                top: sectionTitle.bottom
+                left: sidebar.right
                 right: parent.right
                 bottom: parent.bottom
-                topMargin: 16
+                topMargin: 0
             }
             currentIndex: bar.currentIndex
             onCurrentIndexChanged: {
@@ -516,7 +531,7 @@ DialogView {
                         z: -1
                         x: generalLayout.x - 28
                         y: generalLayout.y - 18
-                        width: generalLayout.width + 56
+                        width: Math.max(generalLayout.width + 56, parent.width - 64)
                         height: generalLayout.height + 36
                         radius: Theme.radiusLarge
                         color: Theme.card
@@ -530,7 +545,8 @@ DialogView {
                         id: generalLayout
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         spacing: 10
                         GridLayout {
@@ -540,7 +556,7 @@ DialogView {
                             columnSpacing: 20
 
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Action On Disconnect:")
                             }
 
@@ -560,7 +576,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Action On Suspend:")
                         }
 
@@ -578,7 +594,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Steam Deck Haptics:")
                             visible: (typeof Chiaki.settings.steamDeckHaptics !== "undefined")
                         }
@@ -603,7 +619,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Steam Deck Vertical:")
                             visible: typeof Chiaki.settings.verticalDeck !== "undefined"
                         }
@@ -628,7 +644,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Audio/Video:")
                         }
 
@@ -646,7 +662,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Log Directory:")
                         }
 
@@ -673,7 +689,7 @@ DialogView {
 
                         }
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Streamer Mode (Hides Info)")
                         }
                         C.CheckBox {
@@ -689,7 +705,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Stream Menu Shortcut Enabled")
                         }
                         C.CheckBox {
@@ -719,7 +735,7 @@ DialogView {
                             visible: Chiaki.settings.streamMenuEnabled
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Stream Menu Combo:")
                             }
 
@@ -828,7 +844,7 @@ DialogView {
                         z: -1
                         x: videoGrid.x - 28
                         y: videoGrid.y - 18
-                        width: videoGrid.width + 56
+                        width: Math.max(videoGrid.width + 56, parent.width - 64)
                         height: videoGrid.height + 36
                         radius: Theme.radiusLarge
                         color: Theme.card
@@ -842,14 +858,15 @@ DialogView {
                         id: videoGrid
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         columns: 3
                         rowSpacing: 10
                         columnSpacing: 20
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Hardware Decoder:")
                         }
 
@@ -891,7 +908,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("MetalFX Upscaling:")
                         visible: Chiaki.settings.metalFxSupported
                     }
@@ -922,7 +939,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Frame Interpolation:")
                         visible: Chiaki.settings.frameInterpolationSupported
                     }
@@ -975,7 +992,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("FPS Counter:")
                     }
 
@@ -996,7 +1013,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Window Type:")
                     }
 
@@ -1016,7 +1033,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Custom Resolution Width")
                         visible: Chiaki.settings.windowType == 1
                     }
@@ -1049,7 +1066,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Custom Resolution Height")
                         visible: Chiaki.settings.windowType == 1
                     }
@@ -1082,7 +1099,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Toggle Fullscreen on Double-click:")
                     }
 
@@ -1098,7 +1115,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Hide Cursor during Stream")
                     }
                     C.CheckBox {
@@ -1113,7 +1130,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Vertical Sync:")
                     }
 
@@ -1133,7 +1150,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Render Preset:")
                     }
 
@@ -1161,7 +1178,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Frame Delivery:")
                     }
 
@@ -1186,7 +1203,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Frame Mixer:")
                     }
 
@@ -1205,7 +1222,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Renderer Backend:")
                     }
 
@@ -1229,7 +1246,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Vulkan Deferred Swap:")
                         visible: Chiaki.settings.rendererBackend == 0
                     }
@@ -1248,7 +1265,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Custom Renderer Settings")
                         visible: Chiaki.window.videoPreset == ChiakiWindow.VideoPreset.Custom
                     }
@@ -1264,7 +1281,7 @@ DialogView {
                     Label { visible: Chiaki.window.videoPreset == ChiakiWindow.VideoPreset.Custom }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Display Settings")
                     }
 
@@ -1300,7 +1317,7 @@ DialogView {
                         z: -1
                         x: streamGrid.x - 28
                         y: streamGrid.y - 18
-                        width: streamGrid.width + 56
+                        width: Math.max(streamGrid.width + 56, parent.width - 64)
                         height: streamGrid.height + 36
                         radius: Theme.radiusLarge
                         color: Theme.card
@@ -1314,14 +1331,15 @@ DialogView {
                         id: streamGrid
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         columns: 3
                         rowSpacing: 10
                         columnSpacing: 20
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Settings for:")
                         }
 
@@ -1351,27 +1369,27 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("")
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("")
                     }
 
@@ -1386,7 +1404,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Resolution:")
                     }
 
@@ -1475,7 +1493,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("FPS:")
                     }
 
@@ -1552,7 +1570,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Bitrate:")
                     }
 
@@ -1690,7 +1708,7 @@ DialogView {
                     }
 
                     Label {
-                        Layout.alignment: Qt.AlignRight
+                        Layout.alignment: Qt.AlignLeft
                         text: qsTr("Codec:")
                         visible: selectedConsole == SettingsDialog.Console.PS5
                     }
@@ -1769,7 +1787,7 @@ DialogView {
                         z: -1
                         x: audiowifigrid.x - 28
                         y: audiowifigrid.y - 18
-                        width: audiowifigrid.width + 56
+                        width: Math.max(audiowifigrid.width + 56, parent.width - 64)
                         height: audiowifigrid.height + 36
                         radius: Theme.radiusLarge
                         color: Theme.card
@@ -1789,10 +1807,11 @@ DialogView {
 
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Output Device:")
                         }
 
@@ -1817,7 +1836,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Input Device:")
                         }
 
@@ -1842,7 +1861,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Audio Buffer Size:")
                         }
 
@@ -1875,7 +1894,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Audio Volume:")
                         }
 
@@ -1906,7 +1925,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Start Mic Unmuted:")
                         }
 
@@ -1922,7 +1941,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Speech Processing:")
                             visible: typeof Chiaki.settings.speechProcessing !== "undefined"
                         }
@@ -1942,7 +1961,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Noise To Suppress:")
                             visible: if (typeof Chiaki.settings.speechProcessing !== "undefined") {Chiaki.settings.speechProcessing} else {false}
                         }
@@ -1974,7 +1993,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Echo To Suppress:")
                             visible: if (typeof Chiaki.settings.speechProcessing !== "undefined") {Chiaki.settings.speechProcessing} else {false}
                         }
@@ -2006,7 +2025,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Weak Wifi Notification:")
                         }
 
@@ -2035,7 +2054,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Packet Loss Reported Max:")
                         }
 
@@ -2064,7 +2083,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Request IDR Frame on FEC Failure")
                         }
 
@@ -2080,7 +2099,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Show Stream Stats During Gameplay")
                         }
 
@@ -2118,7 +2137,7 @@ DialogView {
                         z: -1
                         x: consolesLayout.x - 28
                         y: consolesLayout.y - 18
-                        width: consolesLayout.width + 56
+                        width: Math.max(consolesLayout.width + 56, parent.width - 64)
                         height: consolesLayout.height + 36
                         radius: Theme.radiusLarge
                         color: Theme.card
@@ -2132,7 +2151,8 @@ DialogView {
                         id: consolesLayout
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         spacing: 10
 
@@ -2457,7 +2477,7 @@ DialogView {
                         z: -1
                         x: keysGrid.x - 28
                         y: keysGrid.y - 18
-                        width: keysGrid.width + 56
+                        width: Math.max(keysGrid.width + 56, parent.width - 64)
                         height: keysGrid.height + 36
                         radius: Theme.radiusLarge
                         color: Theme.card
@@ -2481,7 +2501,8 @@ DialogView {
                         id: keysGrid
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         columns: 3
                         rowSpacing: 3
@@ -2813,7 +2834,7 @@ DialogView {
                         z: -1
                         x: controllersLayout.x - 28
                         y: controllersLayout.y - 18
-                        width: controllersLayout.width + 56
+                        width: Math.max(controllersLayout.width + 56, parent.width - 64)
                         height: controllersLayout.height + 36
                         radius: Theme.radiusLarge
                         color: Theme.card
@@ -2828,7 +2849,8 @@ DialogView {
                         id: controllersLayout
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                         }
                         spacing: 10
                         C.Button {
@@ -2853,7 +2875,7 @@ DialogView {
                             spacing: 10
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Background Controller Events:")
                             }
                             C.CheckBox {
@@ -2875,7 +2897,7 @@ DialogView {
                             spacing: 10
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Dpad Touchpad Emulation")
                             }
                             C.CheckBox {
@@ -2907,7 +2929,7 @@ DialogView {
                             Layout.alignment: Qt.AlignHCenter
                             visible: Chiaki.settings.dpadTouchEnabled
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Dpad Touch Increment:")
                             }
 
@@ -2950,7 +2972,7 @@ DialogView {
                             visible: Chiaki.settings.dpadTouchEnabled
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Dpad Regular/Touch Combo:")
                             }
 
@@ -3040,7 +3062,7 @@ DialogView {
                             spacing: 10
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Buttons By Position:")
                             }
 
@@ -3071,7 +3093,7 @@ DialogView {
                             spacing: 10
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("Rumble Haptics:")
                             }
 
@@ -3093,7 +3115,7 @@ DialogView {
                             spacing: 10
                             Layout.alignment: Qt.AlignHCenter
                             Label {
-                                Layout.alignment: Qt.AlignRight
+                                Layout.alignment: Qt.AlignLeft
                                 text: qsTr("True Haptics Intensity:")
                             }
 
@@ -3151,7 +3173,7 @@ DialogView {
                         z: -1
                         x: remoteGrid.x - 28
                         y: remoteGrid.y - 18
-                        width: remoteGrid.width + 56
+                        width: Math.max(remoteGrid.width + 56, parent.width - 64)
                         height: remoteGrid.height + 36
                         radius: Theme.radiusLarge
                         color: Theme.card
@@ -3165,7 +3187,8 @@ DialogView {
                         id: remoteGrid
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                             topMargin: 30
                         }
                         columns: 3
@@ -3209,7 +3232,7 @@ DialogView {
 
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Hole Punching Port Guessing:")
                         }
 
@@ -3227,7 +3250,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Port Guess Count:")
                         }
 
@@ -3258,7 +3281,7 @@ DialogView {
                         }
 
                         Label {
-                            Layout.alignment: Qt.AlignRight
+                            Layout.alignment: Qt.AlignLeft
                             text: qsTr("Port Guess Socket Count:")
                         }
 
@@ -3311,7 +3334,7 @@ DialogView {
                         z: -1
                         x: configGrid.x - 28
                         y: configGrid.y - 18
-                        width: configGrid.width + 56
+                        width: Math.max(configGrid.width + 56, parent.width - 64)
                         height: configGrid.height + 36
                         radius: Theme.radiusLarge
                         color: Theme.card
@@ -3325,7 +3348,8 @@ DialogView {
                         id: configGrid
                         anchors {
                             top: parent.top
-                            horizontalCenter: parent.horizontalCenter
+                            left: parent.left
+                            leftMargin: 60
                             topMargin: 30
                         }
                         columns: 1
@@ -3612,6 +3636,7 @@ DialogView {
             }
         }
     }
+
 
 
 }
